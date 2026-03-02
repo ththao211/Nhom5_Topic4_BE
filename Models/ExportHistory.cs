@@ -6,10 +6,10 @@ namespace SWP_BE.Models
     public class ExportHistory
     {
         [Key]
-        public int ExportID { get; set; }
+        public Guid ExportID { get; set; }
         public string Format { get; set; } = string.Empty;
         public int ItemCount { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } 
         public Guid ProjectID { get; set; }
         [ForeignKey("ProjectID")]
         public Project? Project { get; set; }

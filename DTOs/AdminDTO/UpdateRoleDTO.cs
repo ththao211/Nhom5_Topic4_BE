@@ -1,4 +1,4 @@
-﻿namespace SWP_BE.DTOs
+﻿namespace SWP_BE.DTOs.AdminDTO
 {
     public class UpdateRoleDTO
     {
