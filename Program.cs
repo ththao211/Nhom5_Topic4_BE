@@ -5,6 +5,7 @@ using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 namespace SWP_BE
 {
@@ -14,9 +15,7 @@ namespace SWP_BE
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ===========================================================
-            // 1. [MỚI] CẤU HÌNH CORS
-            // ===========================================================
+            // 1. Cấu hình CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -29,46 +28,60 @@ namespace SWP_BE
 
             // ===== DB =====
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // ===== Controllers & Swagger =====
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+
+            // ===========================================================
+            // CẤU HÌNH SWAGGER ĐỂ HIỆN GHI CHÚ VÀ NÚT AUTHORIZE
+            // ===========================================================
             builder.Services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new() { Title = "SWP-BE", Version = "v1" });
-                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Data Labeling Support API",
+                    Version = "v1.0",
+                    Description = "API phục vụ dự án Gán nhãn dữ liệu - Nhóm 5 Topic 4"
+                });
+
+                // Cấu hình nút Authorize (Ổ khóa)
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
                     BearerFormat = "JWT",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                    Description = "Enter: Bearer {your token}"
+                    In = ParameterLocation.Header,
+                    Description = "Dán Token vào đây (Không cần gõ chữ Bearer):"
                 });
-                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+
+                // QUAN TRỌNG: Summary tiếng Việt từ Controller
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath);
                 }
-            },
-            Array.Empty<string>()
-        }
-    });
             });
 
+            // ===== Dependency Injection (DI) =====
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
-
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
             builder.Services.AddScoped<IProjectLabelService, ProjectLabelService>();
-
             builder.Services.AddScoped<ILabelingTaskRepository, LabelingTaskRepository>();
             builder.Services.AddScoped<ILabelingTaskService, LabelingTaskService>();
 
@@ -91,10 +104,7 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // ===========================================================
-            // 2. [MỚI] TRẢ VỀ JSON LỖI (401, 404, 405) 
-            // Giúp FE luôn nhận được Object thay vì trang HTML lỗi của trình duyệt
-            // ===========================================================
+            // 2. TRẢ VỀ JSON LỖI (Giúp FE dễ xử lý)
             app.UseStatusCodePages(async context =>
             {
                 context.HttpContext.Response.ContentType = "application/json";
@@ -114,11 +124,11 @@ namespace SWP_BE
                 await context.HttpContext.Response.WriteAsJsonAsync(responseObj);
             });
 
-            // ===== Swagger Config =====
+            // ===== Swagger Middleware =====
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1");
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
                 options.RoutePrefix = string.Empty; 
             });
 
