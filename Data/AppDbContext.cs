@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Models;
+using System.Linq;
 
 namespace SWP_BE.Data
 {
@@ -10,7 +11,8 @@ namespace SWP_BE.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Label> Labels { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<Models.Task> Tasks { get; set; } 
+        public DbSet<SWP_BE.Models.Task> Tasks { get; set; }
+
         public DbSet<ProjectLabel> ProjectLabels { get; set; }
         public DbSet<DataItem> DataItems { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
@@ -28,17 +30,15 @@ namespace SWP_BE.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. Chặn xóa dây chuyền toàn hệ thống
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
 
-            // 2. Ràng buộc duy nhất cho UserName
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.UserName)
                 .IsUnique();
-            // 3. Cấu hình ActivityLog
+
             modelBuilder.Entity<ActivityLog>(entity =>
             {
                 entity.HasOne(a => a.Performer)

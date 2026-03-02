@@ -6,6 +6,7 @@ using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
 using static SWP_BE.Models.User;
+using Task = System.Threading.Tasks.Task;
 
 namespace SWP_BE.Controllers
 {
@@ -16,10 +17,8 @@ namespace SWP_BE.Controllers
         private readonly AppDbContext _context;
         public AdminController(AppDbContext context) { _context = context; }
 
-
-        //[Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
+        public async System.Threading.Tasks.Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             if (dto.Role < 1 || dto.Role > 4)
                 return BadRequest("Role không hợp lệ! (1:Admin, 2:Manager, 3:Annotator, 4:Reviewer)");
@@ -46,10 +45,10 @@ namespace SWP_BE.Controllers
 
             return Ok(new { message = "User created successfully", userId = user.UserID });
         }
-        // PATCH TOGGLE STATUS
+
         [Authorize(Roles = "Admin")]
         [HttpPatch("toggle-status/{id}")]
-        public async Task<IActionResult> ToggleStatus(Guid id)
+        public async System.Threading.Tasks.Task<IActionResult> ToggleStatus(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
@@ -64,78 +63,56 @@ namespace SWP_BE.Controllers
             await LogActivity("Toggle Status", user.UserID);
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "User status updated",
-                isActive = user.IsActive
-            });
+            return Ok(new { message = "User status updated", isActive = user.IsActive });
         }
-        // POST RESET PASSWORD
+
         [HttpPost("reset-password/{id}")]
-        public async Task<IActionResult> ResetPassword(Guid id, [FromBody] UpdateRoleDTO dto)
+        public async System.Threading.Tasks.Task<IActionResult> ResetPassword(Guid id, [FromBody] UpdateRoleDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                return NotFound("User not found.");
-
-            if (string.IsNullOrEmpty(dto.NewPassword))
-                return BadRequest("Password cannot be empty.");
+            if (user == null) return NotFound("User not found.");
+            if (string.IsNullOrEmpty(dto.NewPassword)) return BadRequest("Password cannot be empty.");
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-
             await LogActivity("Reset Password", user.UserID);
             await _context.SaveChangesAsync();
-
             return Ok("Password reset successfully.");
         }
 
-
         [Authorize(Roles = "Admin")]
         [HttpGet("all-users")]
-        public async Task<IActionResult> GetAllUsers()
+        public async System.Threading.Tasks.Task<IActionResult> GetAllUsers()
         {
             return Ok(await _context.Users.Where(u => u.IsActive).ToListAsync());
         }
 
-        // GET ALL ROLES
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/roles")]
         public IActionResult GetAllRoles()
         {
             var roles = Enum.GetValues(typeof(UserRole))
                             .Cast<UserRole>()
-                            .Select(r => new
-                            {
-                                Id = (int)r,
-                                Name = r.ToString()
-                            });
-
+                            .Select(r => new { Id = (int)r, Name = r.ToString() });
             return Ok(roles);
         }
 
-        // PATCH ASSIGN ROLE
         [Authorize(Roles = "Admin")]
         [HttpPatch("assign-role/{id}")]
-        public async Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
+        public async System.Threading.Tasks.Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                return NotFound("User not found.");
-
-            if (!Enum.IsDefined(typeof(UserRole), newRole))
-                return BadRequest("Invalid role.");
+            if (user == null) return NotFound("User not found.");
+            if (!Enum.IsDefined(typeof(UserRole), newRole)) return BadRequest("Invalid role.");
 
             user.Role = newRole;
-
             await LogActivity("Assign Role", user.UserID);
             await _context.SaveChangesAsync();
-
             return Ok("Role assigned successfully.");
         }
 
         [Authorize]
         [HttpPut("update-user-info")]
-        public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDTO dto)
+        public async System.Threading.Tasks.Task<IActionResult> UpdateUser(Guid id, UpdateUserDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
@@ -150,7 +127,6 @@ namespace SWP_BE.Controllers
             if (!string.IsNullOrEmpty(dto.Password))
                 user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            // CHẶN ROLE KHI UPDATE: Chỉ Admin được đổi và phải đổi đúng số
             if (dto.Role != 0 && currentRole == "Admin")
             {
                 if (dto.Role < 1 || dto.Role > 4) return BadRequest("Role không hợp lệ!");
@@ -164,7 +140,7 @@ namespace SWP_BE.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete-user/{id}")]
-        public async Task<IActionResult> DeleteUser(Guid id)
+        public async System.Threading.Tasks.Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
@@ -191,67 +167,48 @@ namespace SWP_BE.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/system-configs")]
-        public async Task<IActionResult> GetConfigs()
+        public async System.Threading.Tasks.Task<IActionResult> GetConfigs()
         {
             var configs = await _context.SystemConfigs
-             .Include(x => x.Admin)
-             .OrderByDescending(x => x.UpdatedAt)
-             .ToListAsync();
-
+                             .Include(x => x.Admin)
+                             .OrderByDescending(x => x.UpdatedAt)
+                             .ToListAsync();
             return Ok(configs);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("/api/admin/update-configs/{id}")]
-        public async Task<IActionResult> UpdateConfig(int id, [FromBody] SystemConfig dto)
+        public async System.Threading.Tasks.Task<IActionResult> UpdateConfig(int id, [FromBody] SystemConfig dto)
         {
             var config = await _context.SystemConfigs.FindAsync(id);
-            if (config == null)
-                return NotFound("Config not found.");
+            if (config == null) return NotFound("Config not found.");
 
             var currentAdminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             config.Value = dto.Value;
             config.MaxProjectStorageMB = dto.MaxProjectStorageMB;
             config.AllowedFileTypes = dto.AllowedFileTypes;
             config.UpdatedAt = DateTime.UtcNow;
 
-            if (currentAdminId != null)
-                config.AdminID = Guid.Parse(currentAdminId);
+            if (currentAdminId != null) config.AdminID = Guid.Parse(currentAdminId);
 
-            await LogActivity("Update System Config", Guid.Parse(currentAdminId!));
+            if (currentAdminId != null)
+                await LogActivity("Update System Config", Guid.Parse(currentAdminId));
 
             await _context.SaveChangesAsync();
-
             return Ok("System configuration updated successfully.");
         }
 
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/system-logs/filter")]
-        public async Task<IActionResult> FilterLogs(
-                Guid? userId,
-                string? action,
-                DateTime? fromDate,
-                DateTime? toDate)
+        public async System.Threading.Tasks.Task<IActionResult> FilterLogs(Guid? userId, string? action, DateTime? fromDate, DateTime? toDate)
         {
             var query = _context.ActivityLogs.AsQueryable();
+            if (userId.HasValue) query = query.Where(x => x.PerformedBy == userId.Value);
+            if (!string.IsNullOrEmpty(action)) query = query.Where(x => x.Action.Contains(action));
+            if (fromDate.HasValue) query = query.Where(x => x.CreatedAt >= fromDate.Value);
+            if (toDate.HasValue) query = query.Where(x => x.CreatedAt <= toDate.Value);
 
-            if (userId.HasValue)
-                query = query.Where(x => x.PerformedBy == userId.Value);
-
-            if (!string.IsNullOrEmpty(action))
-                query = query.Where(x => x.Action.Contains(action));
-
-            if (fromDate.HasValue)
-                query = query.Where(x => x.CreatedAt >= fromDate.Value);
-
-            if (toDate.HasValue)
-                query = query.Where(x => x.CreatedAt <= toDate.Value);
-
-            var logs = await query
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();
-
+            var logs = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
             return Ok(logs);
         }
     }

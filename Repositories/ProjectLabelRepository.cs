@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
+using Task = System.Threading.Tasks.Task;
 
 namespace SWP_BE.Repositories
 {
@@ -46,6 +47,7 @@ namespace SWP_BE.Repositories
 
         public async Task AddRangeAsync(IEnumerable<ProjectLabel> projectLabels) { await _context.ProjectLabels.AddRangeAsync(projectLabels); }
 
+        // Dùng Task.CompletedTask của hệ thống
         public async Task UpdateAsync(ProjectLabel projectLabel) { _context.ProjectLabels.Update(projectLabel); await Task.CompletedTask; }
 
         public async Task DeleteAsync(ProjectLabel projectLabel) { _context.ProjectLabels.Remove(projectLabel); await Task.CompletedTask; }
