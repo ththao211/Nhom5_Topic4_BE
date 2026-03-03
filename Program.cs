@@ -84,6 +84,8 @@ namespace SWP_BE
             builder.Services.AddScoped<IProjectLabelService, ProjectLabelService>();
             builder.Services.AddScoped<ILabelingTaskRepository, LabelingTaskRepository>();
             builder.Services.AddScoped<ILabelingTaskService, LabelingTaskService>();
+            builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+            builder.Services.AddScoped<IProjectService, ProjectService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

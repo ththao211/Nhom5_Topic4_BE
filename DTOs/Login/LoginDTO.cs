@@ -1,4 +1,4 @@
-﻿namespace SWP_BE.DTOs
+﻿namespace SWP_BE.DTOs.Login
 {
     public class LoginDTO
     {

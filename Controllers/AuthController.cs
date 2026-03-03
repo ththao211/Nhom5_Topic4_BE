@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
+using SWP_BE.DTOs.Login;
 using SWP_BE.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using static SWP_BE.Models.User;
 
 namespace SWP_BE.Controllers
 {
@@ -25,36 +28,47 @@ namespace SWP_BE.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
-            var user = _context.Users.FirstOrDefault(u => u.UserName == dto.Username);
-
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == dto.Username);
             if (user == null || !VerifyPassword(dto.Password, user.Password))
-                return Unauthorized("Invalid username or password");
-
+            {
+                return Unauthorized(ApiResponse<object>.Fail("Tài khoản hoặc mật khẩu không chính xác"));
+            }
             if (!user.IsActive)
-                return Unauthorized("Account is inactive");
-
+            {
+                return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
+            }
             var token = GenerateJwtToken(user);
+            string roleName = GetRoleName(user.Role);
+            var responseData = new LoginResponseDTO
+            {
+                Token = token,
+                User = new UserInfoDTO
+                {
+                    UserId = user.UserID,
+                    FullName = user.FullName, 
+                    RoleName = roleName
+                }
+            };
 
-            return Ok(new { token, role = (int)user.Role, userId = user.UserID });
+            return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
+
+        private string GetRoleName(UserRole role) => ((int)role) switch
+        {
+            1 => "Admin",
+            2 => "Manager",
+            3 => "Annotator",
+            4 => "Reviewer",
+            _ => "Unknown"
+        };
 
         private string GenerateJwtToken(User user)
         {
-            // Ép kiểu (int) để dùng switch case chuẩn xác
-            string roleName = ((int)user.Role) switch
-            {
-                1 => "Admin",
-                2 => "Manager",
-                3 => "Annotator",
-                4 => "Reviewer",
-                _ => throw new NotImplementedException(),
-            };
-
             var claims = new[]
             {
                 new Claim("id", user.UserID.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, roleName)
+                new Claim(ClaimTypes.Role, GetRoleName(user.Role))
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
