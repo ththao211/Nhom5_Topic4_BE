@@ -18,22 +18,25 @@ namespace SWP_BE.Controllers
         public AdminController(AppDbContext context) { _context = context; }
 
         [HttpPost("create-user")]
-        public async System.Threading.Tasks.Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
-            if (dto.Role < 1 || dto.Role > 4)
-                return BadRequest("Role không hợp lệ! (1:Admin, 2:Manager, 3:Annotator, 4:Reviewer)");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
             if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
                 return BadRequest("Username already exists");
 
+            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
+                return BadRequest("Email already exists");
+
             var user = new User
             {
                 UserID = Guid.NewGuid(),
-                UserName = dto.Username,
+                UserName = dto.Username.Trim(),
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                FullName = dto.FullName,
-                Email = dto.Email,
-                Expertise = dto.Expertise,
+                FullName = dto.FullName.Trim(),
+                Email = dto.Email.Trim(),
+                Expertise = dto.Expertise.Trim(),
                 Role = (UserRole)dto.Role,
                 IsActive = true,
                 Score = 100
@@ -43,7 +46,11 @@ namespace SWP_BE.Controllers
             await LogActivity("Create User", user.UserID);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "User created successfully", userId = user.UserID });
+            return Ok(new
+            {
+                message = "User created successfully",
+                userId = user.UserID
+            });
         }
 
         [Authorize(Roles = "Admin")]
@@ -87,13 +94,62 @@ namespace SWP_BE.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpGet("/api/admin/roles")]
+        [HttpGet("/api/admin/all-roles")]
         public IActionResult GetAllRoles()
         {
             var roles = Enum.GetValues(typeof(UserRole))
                             .Cast<UserRole>()
                             .Select(r => new { Id = (int)r, Name = r.ToString() });
             return Ok(roles);
+        }
+
+        
+        [Authorize(Roles = "Admin,Manager")]
+        [HttpGet("/api/admin/filter-by-roles")]
+        public async Task<IActionResult> FilterUsers(
+            int? role,
+            bool? isActive,
+            string? keyword)
+        {
+            var query = _context.Users.AsQueryable();
+
+            // Filter theo Role
+            if (role.HasValue)
+            {
+                if (role < 1 || role > 4)
+                    return BadRequest("Role phải từ 1-4");
+
+                query = query.Where(u => (int)u.Role == role);
+            }
+
+            // Filter theo trạng thái
+            if (isActive.HasValue)
+                query = query.Where(u => u.IsActive == isActive);
+
+            // Search theo keyword
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(u =>
+                    u.UserName.Contains(keyword) ||
+                    u.FullName.Contains(keyword) ||
+                    u.Email.Contains(keyword));
+            }
+
+            var result = await query
+                .Select(u => new
+                {
+                    u.UserID,
+                    u.UserName,
+                    u.FullName,
+                    u.Email,
+                    Role = u.Role.ToString(),
+                    u.Score,
+                    u.CurrentTaskCount,
+                    u.IsActive
+                })
+                .ToListAsync();
+
+            return Ok(result);
         }
 
         [Authorize(Roles = "Admin")]
