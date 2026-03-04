@@ -12,8 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260301044721_Database")]
-    partial class Database
+    [Migration("20260303150919_AddNavigationProperties")]
+    partial class AddNavigationProperties
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -126,11 +126,9 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
                 {
-                    b.Property<int>("ExportID")
+                    b.Property<Guid>("ExportID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExportID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -182,55 +180,6 @@ namespace SWP_BE.Migrations
                     b.ToTable("Labels");
                 });
 
-            modelBuilder.Entity("SWP_BE.Models.LabelingTask", b =>
-                {
-                    b.Property<Guid>("TaskID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AnnotatorID")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("CurrentRound")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Deadline")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double>("RateComplete")
-                        .HasColumnType("float");
-
-                    b.Property<int>("RejectCount")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("ReviewerID")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SubmissionRate")
-                        .HasColumnType("float");
-
-                    b.Property<string>("TaskName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TaskID");
-
-                    b.HasIndex("AnnotatorID");
-
-                    b.HasIndex("ProjectID");
-
-                    b.HasIndex("ReviewerID");
-
-                    b.ToTable("Tasks");
-                });
-
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
                 {
                     b.Property<Guid>("ProjectID")
@@ -238,6 +187,9 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("Deadline")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
@@ -411,6 +363,13 @@ namespace SWP_BE.Migrations
                     b.Property<Guid>("AdminID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AllowedFileTypes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaxProjectStorageMB")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -455,6 +414,61 @@ namespace SWP_BE.Migrations
                     b.HasIndex("UserID");
 
                     b.ToTable("SystemLogs");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.Task", b =>
+                {
+                    b.Property<Guid>("TaskID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AnnotatorID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentRound")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Deadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProjectID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("RateComplete")
+                        .HasColumnType("float");
+
+                    b.Property<int>("RejectCount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ReviewerID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("SubmissionRate")
+                        .HasColumnType("float");
+
+                    b.Property<string>("TaskName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TaskID");
+
+                    b.HasIndex("AnnotatorID");
+
+                    b.HasIndex("ProjectID");
+
+                    b.HasIndex("ReviewerID");
+
+                    b.ToTable("Tasks");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
@@ -589,7 +603,7 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
                 {
-                    b.HasOne("SWP_BE.Models.LabelingTask", "Task")
+                    b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -615,31 +629,6 @@ namespace SWP_BE.Migrations
                     b.Navigation("Manager");
 
                     b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("SWP_BE.Models.LabelingTask", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Annotator")
-                        .WithMany("AnnotatorTasks")
-                        .HasForeignKey("AnnotatorID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("Tasks")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SWP_BE.Models.User", "Reviewer")
-                        .WithMany("ReviewerTasks")
-                        .HasForeignKey("ReviewerID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Annotator");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
@@ -674,13 +663,13 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
                 {
-                    b.HasOne("SWP_BE.Models.LabelingTask", "Task")
+                    b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
+                        .WithMany("ReputationLogs")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -709,7 +698,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.LabelingTask", "Task")
+                    b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -742,6 +731,31 @@ namespace SWP_BE.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.Task", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "Annotator")
+                        .WithMany("AnnotatorTasks")
+                        .HasForeignKey("AnnotatorID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SWP_BE.Models.Project", "Project")
+                        .WithMany("Tasks")
+                        .HasForeignKey("ProjectID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SWP_BE.Models.User", "Reviewer")
+                        .WithMany("ReviewerTasks")
+                        .HasForeignKey("ReviewerID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Annotator");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Reviewer");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
                 {
                     b.HasOne("SWP_BE.Models.DataItem", "DataItem")
@@ -750,7 +764,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.LabelingTask", "Task")
+                    b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany("TaskItems")
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -764,17 +778,12 @@ namespace SWP_BE.Migrations
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
                 {
                     b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
-                        .WithMany()
+                        .WithMany("TaskItemDetails")
                         .HasForeignKey("TaskItemID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("TaskItem");
-                });
-
-            modelBuilder.Entity("SWP_BE.Models.LabelingTask", b =>
-                {
-                    b.Navigation("TaskItems");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
@@ -786,11 +795,23 @@ namespace SWP_BE.Migrations
                     b.Navigation("Tasks");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.Task", b =>
+                {
+                    b.Navigation("TaskItems");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
+                {
+                    b.Navigation("TaskItemDetails");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
+
+                    b.Navigation("ReputationLogs");
 
                     b.Navigation("ReviewerTasks");
                 });

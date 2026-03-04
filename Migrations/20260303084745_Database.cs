@@ -83,6 +83,7 @@ namespace SWP_BE.Migrations
                     Topic = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProjectType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     GuidelineUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ManagerID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -105,6 +106,8 @@ namespace SWP_BE.Migrations
                     ConfigID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaxProjectStorageMB = table.Column<int>(type: "int", nullable: false),
+                    AllowedFileTypes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AdminID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -169,8 +172,7 @@ namespace SWP_BE.Migrations
                 name: "ExportHistories",
                 columns: table => new
                 {
-                    ExportID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ExportID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Format = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ItemCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -233,6 +235,8 @@ namespace SWP_BE.Migrations
                     Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CurrentRound = table.Column<int>(type: "int", nullable: false),
                     SubmissionRate = table.Column<double>(type: "float", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AnnotatorID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ReviewerID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)

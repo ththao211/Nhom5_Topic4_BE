@@ -32,13 +32,15 @@ namespace SWP_BE.Models
 
         // --- MỐI QUAN HỆ (NAVIGATION PROPERTIES) ---
 
+        public virtual ICollection<ReputationLog> ReputationLogs { get; set; } = new List<ReputationLog>();
+
         [InverseProperty("Manager")]
         public ICollection<Project>? ManagedProjects { get; set; }
 
         [InverseProperty("Annotator")]
-        public ICollection<LabelingTask>? AnnotatorTasks { get; set; }
+        public ICollection<Task>? AnnotatorTasks { get; set; }
 
         [InverseProperty("Reviewer")]
-        public ICollection<LabelingTask>? ReviewerTasks { get; set; }
+        public ICollection<Task>? ReviewerTasks { get; set; }
     }
 }

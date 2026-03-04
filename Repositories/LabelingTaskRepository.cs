@@ -1,6 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
+using System.Collections.Generic;
+using System.Linq;
+// Giải quyết xung đột: Ép C# hiểu Task là của hệ thống, 
+// còn MyTask là cái bảng Task của bạn trong Database.
+using Task = System.Threading.Tasks.Task;
+using MyTask = SWP_BE.Models.Task;
 
 namespace SWP_BE.Repositories
 {
@@ -8,10 +14,10 @@ namespace SWP_BE.Repositories
     {
         Task<IEnumerable<DataItem>> GetUnassignedDataByProjectIdAsync(Guid projectId);
         Task<List<DataItem>> GetDataItemsByIdsAsync(Guid projectId, List<Guid> dataIds);
-        Task<LabelingTask?> GetTaskByIdAsync(Guid taskId);
-        Task<IEnumerable<LabelingTask>> GetTasksByProjectIdAsync(Guid projectId);
-        Task CreateTaskWithItemsAsync(LabelingTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems);
-        Task UpdateTaskAsync(LabelingTask task);
+        Task<MyTask?> GetTaskByIdAsync(Guid taskId);
+        Task<IEnumerable<MyTask>> GetTasksByProjectIdAsync(Guid projectId);
+        Task CreateTaskWithItemsAsync(MyTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems);
+        Task UpdateTaskAsync(MyTask task);
         Task SaveChangesAsync();
     }
 
@@ -34,27 +40,28 @@ namespace SWP_BE.Repositories
                 .ToListAsync();
         }
 
-        public async Task<LabelingTask?> GetTaskByIdAsync(Guid taskId)
+        public async Task<MyTask?> GetTaskByIdAsync(Guid taskId)
         {
-            return await _context.LabelingTasks.FindAsync(taskId);
+            // Sửa lỗi: Đổi LabelingTasks thành Tasks cho khớp với AppDbContext mới
+            return await _context.Tasks.FindAsync(taskId);
         }
 
-        public async Task<IEnumerable<LabelingTask>> GetTasksByProjectIdAsync(Guid projectId)
+        public async Task<IEnumerable<MyTask>> GetTasksByProjectIdAsync(Guid projectId)
         {
-            // Include thêm TaskItems để đếm số lượng file trong Task cho API 4
-            return await _context.LabelingTasks
+            // Sửa lỗi: Đổi LabelingTasks thành Tasks
+            return await _context.Tasks
                 .Include(t => t.TaskItems)
                 .Where(t => t.ProjectID == projectId)
                 .ToListAsync();
         }
 
-        // Dùng Transaction để đảm bảo 3 bước của API 2 (Tạo Task, Tạo TaskItem, Update DataItem) thành công cùng lúc
-        public async Task CreateTaskWithItemsAsync(LabelingTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems)
+        public async Task CreateTaskWithItemsAsync(MyTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _context.LabelingTasks.AddAsync(task);
+                // Sửa lỗi: Đổi LabelingTasks thành Tasks
+                await _context.Tasks.AddAsync(task);
                 await _context.TaskItems.AddRangeAsync(taskItems);
                 _context.DataItems.UpdateRange(updatedDataItems);
 
@@ -68,9 +75,10 @@ namespace SWP_BE.Repositories
             }
         }
 
-        public async Task UpdateTaskAsync(LabelingTask task)
+        public async Task UpdateTaskAsync(MyTask task)
         {
-            _context.LabelingTasks.Update(task);
+            // Sửa lỗi: Đổi LabelingTasks thành Tasks
+            _context.Tasks.Update(task);
             await Task.CompletedTask;
         }
 

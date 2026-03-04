@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SWP_BE.Data;
 
@@ -11,9 +12,11 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260303144648_UpdateRelationshipTaskItem")]
+    partial class UpdateRelationshipTaskItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -666,7 +669,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany("ReputationLogs")
+                        .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -807,8 +810,6 @@ namespace SWP_BE.Migrations
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
-
-                    b.Navigation("ReputationLogs");
 
                     b.Navigation("ReviewerTasks");
                 });

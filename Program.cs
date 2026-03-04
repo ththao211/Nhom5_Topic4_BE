@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -94,7 +94,7 @@ namespace SWP_BE
 
             app.UseHttpsRedirection();
 
-            
+
             app.UseAuthentication();
             app.UseAuthorization();
 

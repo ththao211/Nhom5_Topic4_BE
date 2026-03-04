@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SWP_BE.Data;
 
@@ -11,9 +12,11 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260303084745_Database")]
+    partial class Database
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -666,7 +669,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany("ReputationLogs")
+                        .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -775,7 +778,7 @@ namespace SWP_BE.Migrations
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
                 {
                     b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
-                        .WithMany("TaskItemDetails")
+                        .WithMany()
                         .HasForeignKey("TaskItemID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -797,18 +800,11 @@ namespace SWP_BE.Migrations
                     b.Navigation("TaskItems");
                 });
 
-            modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.Navigation("TaskItemDetails");
-                });
-
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
-
-                    b.Navigation("ReputationLogs");
 
                     b.Navigation("ReviewerTasks");
                 });

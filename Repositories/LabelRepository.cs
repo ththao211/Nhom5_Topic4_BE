@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
+using Task = System.Threading.Tasks.Task;
 
 namespace SWP_BE.Repositories
 {
@@ -24,7 +25,6 @@ namespace SWP_BE.Repositories
         {
             var query = _context.Labels.AsQueryable();
 
-            // Hỗ trợ lọc theo Category nếu có truyền param lên
             if (!string.IsNullOrWhiteSpace(category))
             {
                 query = query.Where(l => l.Category.Contains(category));
@@ -40,11 +40,18 @@ namespace SWP_BE.Repositories
 
         public async Task AddAsync(Label label) { await _context.Labels.AddAsync(label); }
 
-        public async Task UpdateAsync(Label label) { _context.Labels.Update(label); await Task.CompletedTask; }
+        public async Task UpdateAsync(Label label)
+        {
+            _context.Labels.Update(label);
+            await Task.CompletedTask;
+        }
 
-        public async Task DeleteAsync(Label label) { _context.Labels.Remove(label); await Task.CompletedTask; }
+        public async Task DeleteAsync(Label label)
+        {
+            _context.Labels.Remove(label);
+            await Task.CompletedTask;
+        }
 
-        // --- HÀM NÀY QUAN TRỌNG: Check xem Label có bị dính dáng tới Project nào chưa ---
         public async Task<bool> IsLabelUsedInProjectsAsync(int labelId)
         {
             return await _context.ProjectLabels.AnyAsync(pl => pl.LabelID == labelId);

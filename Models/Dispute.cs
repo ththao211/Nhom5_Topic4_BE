@@ -15,6 +15,6 @@ namespace SWP_BE.Models
         public DateTime? ResolvedAt { get; set; }
         public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public LabelingTask? Task { get; set; }
+        public Task? Task { get; set; }
     }
 }

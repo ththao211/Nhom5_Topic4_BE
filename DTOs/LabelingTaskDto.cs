@@ -41,6 +41,11 @@ namespace SWP_BE.DTOs
         public DateTime? Deadline { get; set; }
         public Guid? AnnotatorID { get; set; }
         public Guid? ReviewerID { get; set; }
+
+        // MỚI THÊM: Tên người dùng để FE hiển thị luôn cho tiện
+        public string? AnnotatorName { get; set; }
+        public string? ReviewerName { get; set; }
+
         public int TotalItems { get; set; } // Số lượng ảnh trong task
     }
 

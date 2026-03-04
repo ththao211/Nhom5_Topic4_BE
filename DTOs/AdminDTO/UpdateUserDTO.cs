@@ -1,6 +1,4 @@
-﻿using static SWP_BE.Models.User;
-
-namespace SWP_BE.DTOs
+﻿namespace SWP_BE.DTOs.AdminDTO
 {
     public class UpdateUserDTO
     {
@@ -12,6 +10,6 @@ namespace SWP_BE.DTOs
         public int? Score { get; set; }
         public int? CurrentTaskCount { get; set; }
         public bool? IsActive { get; set; }
-        public UserRole Role { get; set; }
+        public int Role { get; set; }
     }
 }

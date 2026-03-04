@@ -10,9 +10,10 @@ namespace SWP_BE.Models
         public bool IsFlagged { get; set; }
         public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public LabelingTask? Task { get; set; }
+        public Task? Task { get; set; }
         public Guid DataID { get; set; }
         [ForeignKey("DataID")]
         public DataItem? DataItem { get; set; }
+        public virtual ICollection<TaskItemDetail> TaskItemDetails { get; set; } = new List<TaskItemDetail>();
     }
 }

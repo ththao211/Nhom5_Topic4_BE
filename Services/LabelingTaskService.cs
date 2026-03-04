@@ -1,6 +1,12 @@
-﻿using SWP_BE.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
+using SWP_BE.Data;
+using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWP_BE.Services
 {
@@ -8,21 +14,23 @@ namespace SWP_BE.Services
     {
         Task<IEnumerable<UnassignedDataItemDto>> GetUnassignedDataAsync(Guid projectId);
         Task<(bool success, string message, Guid? taskId)> CreateTaskAsync(Guid projectId, CreateTaskDto dto);
-        Task<(bool success, string message)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto);
+        Task<(bool success, string message, Models.Task? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto);
         Task<IEnumerable<TaskProgressDto>> GetProjectTasksAsync(Guid projectId);
         Task<(bool success, string message)> UpdateDeadlineAsync(Guid taskId, UpdateDeadlineDto dto);
+        Task<IEnumerable<UserBasicDto>> GetUsersByRoleAsync(string roleName);
     }
 
     public class LabelingTaskService : ILabelingTaskService
     {
         private readonly ILabelingTaskRepository _taskRepo;
+        private readonly AppDbContext _context;
 
-        public LabelingTaskService(ILabelingTaskRepository taskRepo)
+        public LabelingTaskService(ILabelingTaskRepository taskRepo, AppDbContext context)
         {
             _taskRepo = taskRepo;
+            _context = context;
         }
 
-        // API 1
         public async Task<IEnumerable<UnassignedDataItemDto>> GetUnassignedDataAsync(Guid projectId)
         {
             var dataItems = await _taskRepo.GetUnassignedDataByProjectIdAsync(projectId);
@@ -35,54 +43,43 @@ namespace SWP_BE.Services
             });
         }
 
-        // API 2
         public async Task<(bool success, string message, Guid? taskId)> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
         {
             var dataItems = await _taskRepo.GetDataItemsByIdsAsync(projectId, dto.DataIDs);
-
-            // Check nếu có file nào đã bị gán trước đó hoặc không tồn tại
             if (dataItems.Count != dto.DataIDs.Count || dataItems.Any(d => d.IsAssigned))
             {
                 return (false, "Một số dữ liệu không tồn tại hoặc đã được phân công.", null);
             }
 
-            // 1. Tạo bảng LabelingTask
-            var newTask = new LabelingTask
+            var newTask = new Models.Task
             {
                 TaskID = Guid.NewGuid(),
                 ProjectID = projectId,
                 TaskName = dto.TaskName,
-                Status = "NEW", // Theo chuẩn thiết kế của bạn
-                Deadline = dto.Deadline ?? DateTime.UtcNow.AddDays(7), // Mặc định 7 ngày nếu không truyền
+                Status = "NEW",
+                Deadline = dto.Deadline ?? DateTime.UtcNow.AddDays(7),
                 RateComplete = 0,
                 RejectCount = 0
             };
 
-            // 2. Gom vào TaskItems & 3. Đánh dấu DataItems IsAssigned = true
-            var taskItems = new List<TaskItem>();
-            foreach (var item in dataItems)
+            var taskItems = dataItems.Select(item => new TaskItem
             {
-                taskItems.Add(new TaskItem
-                {
-                    ItemID = Guid.NewGuid(),
-                    TaskID = newTask.TaskID,
-                    DataID = item.DataID,
-                    IsFlagged = false
-                });
+                ItemID = Guid.NewGuid(),
+                TaskID = newTask.TaskID,
+                DataID = item.DataID,
+                IsFlagged = false
+            }).ToList();
 
-                item.IsAssigned = true; // Đánh dấu đã có chủ
-            }
+            foreach (var item in dataItems) item.IsAssigned = true;
 
             await _taskRepo.CreateTaskWithItemsAsync(newTask, taskItems, dataItems);
-
             return (true, "Tạo task thành công.", newTask.TaskID);
         }
 
-        // API 3
-        public async Task<(bool success, string message)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto)
+        public async Task<(bool success, string message, Models.Task? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto)
         {
             var task = await _taskRepo.GetTaskByIdAsync(taskId);
-            if (task == null) return (false, "Task không tồn tại.");
+            if (task == null) return (false, "Task không tồn tại.", null);
 
             if (dto.AnnotatorID.HasValue) task.AnnotatorID = dto.AnnotatorID.Value;
             if (dto.ReviewerID.HasValue) task.ReviewerID = dto.ReviewerID.Value;
@@ -90,10 +87,15 @@ namespace SWP_BE.Services
             await _taskRepo.UpdateTaskAsync(task);
             await _taskRepo.SaveChangesAsync();
 
-            return (true, "Phân công nhân sự thành công.");
+            var fullTaskInfo = await _context.Tasks
+                .Include(t => t.Project)
+                .Include(t => t.Annotator)
+                .Include(t => t.Reviewer)
+                .FirstOrDefaultAsync(t => t.TaskID == taskId);
+
+            return (true, "Phân công nhân sự thành công.", fullTaskInfo);
         }
 
-        // API 4
         public async Task<IEnumerable<TaskProgressDto>> GetProjectTasksAsync(Guid projectId)
         {
             var tasks = await _taskRepo.GetTasksByProjectIdAsync(projectId);
@@ -107,22 +109,41 @@ namespace SWP_BE.Services
                 Deadline = t.Deadline,
                 AnnotatorID = t.AnnotatorID,
                 ReviewerID = t.ReviewerID,
-                TotalItems = t.TaskItems?.Count ?? 0
+                TotalItems = t.TaskItems?.Count ?? 0,
+                AnnotatorName = t.Annotator?.FullName,
+                ReviewerName = t.Reviewer?.FullName
             });
         }
 
-        // API 5
         public async Task<(bool success, string message)> UpdateDeadlineAsync(Guid taskId, UpdateDeadlineDto dto)
         {
             var task = await _taskRepo.GetTaskByIdAsync(taskId);
             if (task == null) return (false, "Task không tồn tại.");
-
             task.Deadline = dto.Deadline;
-
             await _taskRepo.UpdateTaskAsync(task);
             await _taskRepo.SaveChangesAsync();
-
             return (true, "Cập nhật thời hạn thành công.");
+        }
+
+        // HÀM LẤY USER THEO ROLE
+        public async Task<IEnumerable<UserBasicDto>> GetUsersByRoleAsync(string roleName)
+        {
+            if (!Enum.TryParse<Models.User.UserRole>(roleName, out var roleEnum))
+            {
+                return new List<UserBasicDto>();
+            }
+
+            return await _context.Users
+                .Where(u => u.Role == roleEnum && u.IsActive == true)
+                .Select(u => new UserBasicDto
+                {
+                    UserID = u.UserID,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Expertise = u.Expertise,
+                    Score = u.Score
+                })
+                .ToListAsync();
         }
     }
 }

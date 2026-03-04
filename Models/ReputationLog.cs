@@ -15,6 +15,6 @@ namespace SWP_BE.Models
         public User? User { get; set; }
         public Guid? TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public LabelingTask? Task { get; set; }
+        public Task? Task { get; set; }
     }
 }

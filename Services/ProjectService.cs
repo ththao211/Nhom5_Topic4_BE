@@ -137,7 +137,7 @@ namespace SWP_BE.Services
             var unassignedData = await _projectRepo.GetUnassignedDataAsync(projectId, dto.NumberOfItemsPerTask);
             if (!unassignedData.Any()) throw new Exception("Không còn dữ liệu chưa gán.");
 
-            var newTask = new LabelingTask
+            var newTask = new Models.Task
             {
                 TaskID = Guid.NewGuid(), // TẠO NGẪU NHIÊN ID TASK
                 ProjectID = projectId,

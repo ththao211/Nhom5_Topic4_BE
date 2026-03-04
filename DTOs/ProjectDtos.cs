@@ -2,6 +2,10 @@
 
 namespace SWP_BE.DTOs
 {
+    public class ExportRequest
+    {
+        public string Formats { get; set; }
+    }
     public class CreateProjectDto
     {
         [Required(ErrorMessage = "Tên dự án là bắt buộc")]
