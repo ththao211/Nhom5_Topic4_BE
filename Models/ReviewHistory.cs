@@ -7,7 +7,6 @@ namespace SWP_BE.Models
     {
         [Key]
         public int HistoryID { get; set; }
-        public int IDDetail { get; set; }
         public DateTime ReviewAt { get; set; } = DateTime.Now;
         public string FinalResult { get; set; } = string.Empty;
         public string Field { get; set; } = string.Empty;

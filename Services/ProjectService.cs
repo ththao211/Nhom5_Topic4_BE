@@ -1,6 +1,11 @@
 ﻿using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TaskModel = SWP_BE.Models.Task;
 
 namespace SWP_BE.Services
 {
@@ -61,7 +66,7 @@ namespace SWP_BE.Services
         {
             var project = new Project
             {
-                ProjectID = Guid.NewGuid(), // TẠO NGẪU NHIÊN ID PROJECT
+                ProjectID = Guid.NewGuid(),
                 ProjectName = dto.ProjectName,
                 Description = dto.Description,
                 Topic = dto.Topic,
@@ -85,7 +90,7 @@ namespace SWP_BE.Services
             project.Description = dto.Description;
             project.Topic = dto.Topic;
             project.ProjectType = dto.ProjectType;
-            project.GuidelineUrl = dto.GuidelineUrl; // Tối ưu: Cập nhật luôn Guideline
+            project.GuidelineUrl = dto.GuidelineUrl;
 
             await _projectRepo.SaveChangesAsync();
             return true;
@@ -116,11 +121,11 @@ namespace SWP_BE.Services
 
             var dataItems = dto.FileUrls.Select(url => new DataItem
             {
-                DataID = Guid.NewGuid(), // TẠO NGẪU NHIÊN ID CHO TỪNG ẢNH
+                DataID = Guid.NewGuid(),
                 ProjectID = projectId,
                 FilePath = url,
                 FileType = dto.FileType,
-                FileName = $"Data_{DateTime.Now.Ticks}", // Tối ưu: Đặt tên file động
+                FileName = $"Data_{DateTime.Now.Ticks}",
                 IsAssigned = false
             }).ToList();
 
@@ -137,12 +142,12 @@ namespace SWP_BE.Services
             var unassignedData = await _projectRepo.GetUnassignedDataAsync(projectId, dto.NumberOfItemsPerTask);
             if (!unassignedData.Any()) throw new Exception("Không còn dữ liệu chưa gán.");
 
-            var newTask = new Models.Task
+            var newTask = new TaskModel
             {
-                TaskID = Guid.NewGuid(), // TẠO NGẪU NHIÊN ID TASK
+                TaskID = Guid.NewGuid(),
                 ProjectID = projectId,
                 TaskName = $"{dto.TaskPrefix} - {DateTime.Now:dd/MM HH:mm}",
-                Status = "Draft",
+                Status = TaskModel.TaskStatus.New,
                 Deadline = DateTime.UtcNow.AddDays(7)
             };
 
@@ -151,9 +156,10 @@ namespace SWP_BE.Services
 
             var taskItems = unassignedData.Select(d => new TaskItem
             {
-                ItemID = Guid.NewGuid(), // Nếu TaskItem dùng Guid
+                ItemID = Guid.NewGuid(),
                 TaskID = newTask.TaskID,
-                DataID = d.DataID
+                DataID = d.DataID,
+                IsFlagged = false
             }).ToList();
 
             await _projectRepo.AddTaskItemsAsync(taskItems);

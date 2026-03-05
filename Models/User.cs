@@ -19,18 +19,21 @@ namespace SWP_BE.Models
         [Required]
         public string UserName { get; set; } = string.Empty;
 
-        [Required]
-        public string Password { get; set; } = string.Empty;
+        // [ĐÃ SỬA]: Bỏ [Required] và thêm dấu ? (nullable) để cho phép login bằng Google
+        public string? Password { get; set; }
 
         public string FullName { get; set; } = string.Empty;
         public UserRole Role { get; set; } = 0;
         public string Email { get; set; } = string.Empty;
+        //Lưu UID từ Firebase trả về để tăng cường bảo mật
+        public string? FirebaseUid { get; set; }
+        // Lưu Avatar Google để hiện lên UI cho đẹp
+        public string? AvatarUrl { get; set; }
+
         public string? Expertise { get; set; }
         public int Score { get; set; }
         public int CurrentTaskCount { get; set; }
         public bool IsActive { get; set; } = true;
-
-        // --- MỐI QUAN HỆ (NAVIGATION PROPERTIES) ---
 
         public virtual ICollection<ReputationLog> ReputationLogs { get; set; } = new List<ReputationLog>();
 

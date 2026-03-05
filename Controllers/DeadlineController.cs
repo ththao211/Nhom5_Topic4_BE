@@ -63,12 +63,12 @@ namespace SWP_BE.Controllers
             var overdueTasks = await _context.Tasks
                 .Where(t => t.ProjectID == id
                             && t.Deadline < now
-                            && t.Status != "Approved")
+                            && t.Status != TaskModel.TaskStatus.Approved)
                 .Select(t => new
                 {
                     t.TaskID,
                     t.TaskName,
-                    t.Status,
+                    Status = t.Status.ToString(),
                     t.Deadline,
                     t.AnnotatorID,
                     t.ReviewerID,

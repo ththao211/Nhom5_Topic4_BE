@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TaskModel = SWP_BE.Models.Task;
 
 namespace SWP_BE.Services
 {
@@ -14,7 +15,7 @@ namespace SWP_BE.Services
     {
         Task<IEnumerable<UnassignedDataItemDto>> GetUnassignedDataAsync(Guid projectId);
         Task<(bool success, string message, Guid? taskId)> CreateTaskAsync(Guid projectId, CreateTaskDto dto);
-        Task<(bool success, string message, Models.Task? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto);
+        Task<(bool success, string message, TaskModel? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto);
         Task<IEnumerable<TaskProgressDto>> GetProjectTasksAsync(Guid projectId);
         Task<(bool success, string message)> UpdateDeadlineAsync(Guid taskId, UpdateDeadlineDto dto);
         Task<IEnumerable<UserBasicDto>> GetUsersByRoleAsync(string roleName);
@@ -51,12 +52,12 @@ namespace SWP_BE.Services
                 return (false, "Một số dữ liệu không tồn tại hoặc đã được phân công.", null);
             }
 
-            var newTask = new Models.Task
+            var newTask = new TaskModel
             {
                 TaskID = Guid.NewGuid(),
                 ProjectID = projectId,
                 TaskName = dto.TaskName,
-                Status = "NEW",
+                Status = TaskModel.TaskStatus.New,
                 Deadline = dto.Deadline ?? DateTime.UtcNow.AddDays(7),
                 RateComplete = 0,
                 RejectCount = 0
@@ -76,7 +77,7 @@ namespace SWP_BE.Services
             return (true, "Tạo task thành công.", newTask.TaskID);
         }
 
-        public async Task<(bool success, string message, Models.Task? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto)
+        public async Task<(bool success, string message, TaskModel? taskDetails)> AssignPersonnelAsync(Guid taskId, AssignTaskDto dto)
         {
             var task = await _taskRepo.GetTaskByIdAsync(taskId);
             if (task == null) return (false, "Task không tồn tại.", null);
@@ -103,7 +104,7 @@ namespace SWP_BE.Services
             {
                 TaskID = t.TaskID,
                 TaskName = t.TaskName,
-                Status = t.Status,
+                Status = t.Status.ToString(),
                 RateComplete = t.RateComplete,
                 RejectCount = t.RejectCount,
                 Deadline = t.Deadline,

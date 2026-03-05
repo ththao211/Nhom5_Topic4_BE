@@ -7,10 +7,15 @@ namespace SWP_BE.Models
     {
         [Key]
         public int LogID { get; set; }
+
         public string ActionType { get; set; } = string.Empty;
-        public int TargetID { get; set; }
+
+        public string TargetID { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public string EntityType { get; set; } = string.Empty;
+
+        public string EntityType { get; set; } = string.Empty; 
+
         public Guid UserID { get; set; }
         [ForeignKey("UserID")]
         public User? User { get; set; }

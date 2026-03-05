@@ -47,9 +47,10 @@ namespace SWP_BE.Controllers
                 return NotFound("No tasks found");
 
             var total = tasks.Count;
-            var approved = tasks.Count(t => t.Status == "Approved");
-            var pending = tasks.Count(t => t.Status == "Pending");
-            var rejected = tasks.Count(t => t.Status == "Rejected");
+            // [ĐÃ SỬA] Dùng Enum thay vì string
+            var approved = tasks.Count(t => t.Status == TaskModel.TaskStatus.Approved);
+            var pending = tasks.Count(t => t.Status == TaskModel.TaskStatus.PendingReview); // Đổi Pending thành PendingReview theo Model
+            var rejected = tasks.Count(t => t.Status == TaskModel.TaskStatus.Rejected);
 
             double rateComplete = total == 0 ? 0 : (double)approved / total * 100;
 
@@ -87,11 +88,11 @@ namespace SWP_BE.Controllers
                 {
                     UserId = g.Key,
                     TotalTasks = g.Count(),
-                    ApprovedTasks = g.Count(x => x.Status == "Approved"),
-                    RejectedTasks = g.Count(x => x.Status == "Rejected"),
+                    ApprovedTasks = g.Count(x => x.Status == TaskModel.TaskStatus.Approved),
+                    RejectedTasks = g.Count(x => x.Status == TaskModel.TaskStatus.Rejected),
 
                     RejectRate = g.Count() == 0 ? 0 :
-                        (double)g.Count(x => x.Status == "Rejected") / g.Count() * 100,
+                        (double)g.Count(x => x.Status == TaskModel.TaskStatus.Rejected) / g.Count() * 100,
 
                     AvgProcessingTimeHours = g
                         .Where(x => x.CompletedAt.HasValue)
@@ -128,7 +129,8 @@ namespace SWP_BE.Controllers
                 return NotFound("Project not found");
 
             var approvedTasks = await _context.Tasks
-                .Where(t => t.ProjectID == projectId && t.Status == "Approved")
+                // [ĐÃ SỬA] Dùng Enum thay vì string
+                .Where(t => t.ProjectID == projectId && t.Status == TaskModel.TaskStatus.Approved)
                 .ToListAsync();
 
             if (!approvedTasks.Any())
@@ -159,11 +161,6 @@ namespace SWP_BE.Controllers
             });
         }
 
-        /// <summary>
-        /// [Role: Manager] Lấy lịch sử các lần export của dự án.
-        /// </summary>
-        /// <param name="projectId">ID của dự án (Guid)</param>
-        /// <response code="200">Trả về danh sách lịch sử export, sắp xếp mới nhất trước.</response>
         [Authorize(Roles = "Manager")]
         [HttpGet("{projectId}/export-histories")]
         [ProducesResponseType(typeof(IEnumerable<object>), 200)]
@@ -185,16 +182,6 @@ namespace SWP_BE.Controllers
             return Ok(histories);
         }
 
-        /// <summary>
-        /// [Role: Tất cả] Lấy lịch sử thay đổi điểm tín nhiệm của một user.
-        /// </summary>
-        /// <remarks>
-        /// Trả về danh sách các lần cộng/trừ điểm, lý do và task liên quan.
-        /// Sắp xếp theo thời gian mới nhất trước.
-        /// </remarks>
-        /// <param name="userId">ID của user (Guid)</param>
-        /// <response code="200">Trả về danh sách reputation logs.</response>
-        /// <response code="404">User không tồn tại.</response>
         [Authorize]
         [HttpGet("users/{userId}/reputation-logs")]
         [ProducesResponseType(typeof(IEnumerable<object>), 200)]

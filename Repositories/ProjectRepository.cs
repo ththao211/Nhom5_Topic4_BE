@@ -15,7 +15,7 @@ namespace SWP_BE.Repositories
         Task SaveChangesAsync();
         Task AddDataItemsAsync(IEnumerable<DataItem> dataItems);
         Task<List<DataItem>> GetUnassignedDataAsync(Guid projectId, int takeCount);
-        Task AddTaskAsync(MyTask task); // Dùng MyTask ở đây
+        Task AddTaskAsync(MyTask task); 
         Task AddTaskItemsAsync(IEnumerable<TaskItem> taskItems);
     }
 
