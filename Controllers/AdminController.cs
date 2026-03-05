@@ -225,15 +225,19 @@ namespace SWP_BE.Controllers
 
         private async Task LogActivity(string action, Guid targetUserId)
         {
-            var currentUserIdStr = User.FindFirst("id")?.Value;
+            var claim = User.FindFirst("sub");
+            if (claim == null)
+                throw new UnauthorizedAccessException("User ID not found in token");
+
             var log = new ActivityLog
             {
                 Id = Guid.NewGuid(),
                 Action = action,
                 TargetUserId = targetUserId,
-                PerformedBy = currentUserIdStr != null ? Guid.Parse(currentUserIdStr) : null,
+                PerformedBy = Guid.Parse(claim.Value),
                 CreatedAt = DateTime.UtcNow
             };
+
             _context.ActivityLogs.Add(log);
         }
 
