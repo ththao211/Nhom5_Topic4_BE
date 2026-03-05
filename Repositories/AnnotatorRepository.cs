@@ -12,6 +12,10 @@ namespace SWP_BE.Repositories
         System.Threading.Tasks.Task<IEnumerable<SWP_BE.Models.Task>> GetTasksAsync(Guid annotatorId, string? status);
         System.Threading.Tasks.Task<SWP_BE.Models.Task?> GetTaskByIdAsync(Guid taskId, Guid annotatorId);
         System.Threading.Tasks.Task<TaskItem?> GetItemByIdAsync(Guid itemId);
+
+        // THÊM MỚI: Phương thức để xóa các AnnotationDetail cũ
+        void DeleteItemDetails(IEnumerable<TaskItemDetail> details);
+
         System.Threading.Tasks.Task AddDisputeAsync(Dispute dispute);
         System.Threading.Tasks.Task<User?> GetUserWithLogsAsync(Guid userId);
         System.Threading.Tasks.Task SaveChangesAsync();
@@ -25,7 +29,6 @@ namespace SWP_BE.Repositories
         public async System.Threading.Tasks.Task<IEnumerable<SWP_BE.Models.Task>> GetTasksAsync(Guid annotatorId, string? status)
         {
             var query = _context.Tasks.Where(t => t.AnnotatorID == annotatorId);
-
             if (!string.IsNullOrEmpty(status))
             {
                 if (Enum.TryParse<SWP_BE.Models.Task.TaskStatus>(status, true, out var parsedStatus))
@@ -33,24 +36,17 @@ namespace SWP_BE.Repositories
                     query = query.Where(t => t.Status == parsedStatus);
                 }
             }
-
             return await query.ToListAsync();
         }
 
-        // ============================================================
-        // THÊM INCLUDE ĐỂ LẤY DANH SÁCH LABEL CHO FRONTEND
-        // ============================================================
         public async System.Threading.Tasks.Task<SWP_BE.Models.Task?> GetTaskByIdAsync(Guid taskId, Guid annotatorId)
         {
             return await _context.Tasks
-                // 1. Lấy thông tin Project và các Nhãn được phép dùng
                 .Include(t => t.Project)
                     .ThenInclude(p => p.ProjectLabels)
                         .ThenInclude(pl => pl.Label)
-                // 2. Lấy danh sách ảnh trong Task
                 .Include(t => t.TaskItems)
                     .ThenInclude(ti => ti.DataItem)
-                // 3. Lấy tọa độ cũ đã vẽ (nếu có)
                 .Include(t => t.TaskItems)
                     .ThenInclude(ti => ti.TaskItemDetails)
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.AnnotatorID == annotatorId);
@@ -62,6 +58,12 @@ namespace SWP_BE.Repositories
                 .Include(ti => ti.DataItem)
                 .Include(ti => ti.TaskItemDetails)
                 .FirstOrDefaultAsync(ti => ti.ItemID == itemId);
+        }
+
+        // THỰC THI XÓA: Dùng RemoveRange để xóa hẳn khỏi DB
+        public void DeleteItemDetails(IEnumerable<TaskItemDetail> details)
+        {
+            _context.TaskItemDetails.RemoveRange(details);
         }
 
         public async System.Threading.Tasks.Task AddDisputeAsync(Dispute dispute) => await _context.Disputes.AddAsync(dispute);

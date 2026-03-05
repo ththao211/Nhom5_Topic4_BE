@@ -51,43 +51,61 @@ namespace SWP_BE.Services
                     }).ToList()
                 }).ToList(),
 
-                // Lấy danh sách LabelName từ bảng ProjectLabels của Project liên quan
                 AvailableLabels = t.Project?.ProjectLabels?
-                    .Select(pl => pl.Label?.LabelName ?? "")
-                    .Where(name => !string.IsNullOrEmpty(name))
-                    .ToList() ?? new List<string>()
+                    .Where(pl => pl.Label != null && !string.IsNullOrEmpty(pl.Label.LabelName))
+                    .Select(pl => new LabelInfoDto
+                    {
+                        Name = !string.IsNullOrEmpty(pl.CustomName) ? pl.CustomName : pl.Label.LabelName,
+                        Color = !string.IsNullOrEmpty(pl.Label.DefaultColor) ? pl.Label.DefaultColor : "#ffffff"
+                    })
+                    .ToList() ?? new List<LabelInfoDto>()
             };
         }
 
+        // --- FIX LỖI 500: XÓA CŨ - THÊM MỚI AN TOÀN ---
         public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, SaveAnnotationDto dto)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
             if (item == null) return false;
 
-            item.TaskItemDetails.Clear();
-
-            if (dto.Annotations != null)
+            try
             {
-                foreach (var ann in dto.Annotations)
+                // 1. Xóa sạch các bản ghi cũ khỏi Database thông qua Repository
+                if (item.TaskItemDetails != null && item.TaskItemDetails.Any())
                 {
-                    item.TaskItemDetails.Add(new TaskItemDetail
-                    {
-                        AnnotationData = ann.AnnotationData,
-                        Content = ann.Content,
-                        Field = ann.Field
-                    });
+                    _repo.DeleteItemDetails(item.TaskItemDetails);
                 }
-            }
 
-            await _repo.SaveChangesAsync();
-            return true;
+                // 2. Thêm mới danh sách tọa độ từ Frontend
+                if (dto.Annotations != null)
+                {
+                    foreach (var ann in dto.Annotations)
+                    {
+                        item.TaskItemDetails.Add(new TaskItemDetail
+                        {
+                            AnnotationData = ann.AnnotationData,
+                            Content = ann.Content,
+                            Field = ann.Field,
+                            TaskItemID = itemId // Sử dụng đúng tên khóa ngoại trong Model
+                        });
+                    }
+                }
+
+                // 3. Thực thi lưu
+                await _repo.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Ném lỗi để log Server ghi lại nguyên nhân thực sự (thường là tràn NVARCHAR)
+                throw new Exception($"Lỗi lưu Database: {ex.Message}", ex);
+            }
         }
 
         public async System.Threading.Tasks.Task<(bool Success, string Message)> SubmitTask(Guid taskId, Guid userId, bool isResubmit)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return (false, "Task không tồn tại.");
-
             if (isResubmit && task.CurrentRound >= 3) return (false, "Đã quá 3 lần nộp lại.");
 
             var items = task.TaskItems ?? new List<TaskItem>();
@@ -105,7 +123,6 @@ namespace SWP_BE.Services
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return false;
-
             if (task.Status == SWP_BE.Models.Task.TaskStatus.New)
             {
                 task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
@@ -162,11 +179,8 @@ namespace SWP_BE.Services
             };
         }
 
-
-        /// Lấy chi tiết tọa độ của duy nhất 1 tấm ảnh
         public async System.Threading.Tasks.Task<TaskItemDto?> GetItemDetail(Guid itemId)
         {
-            // Repository đã có sẵn hàm GetItemByIdAsync bao gồm cả Include TaskItemDetails rồi
             var ti = await _repo.GetItemByIdAsync(itemId);
             if (ti == null) return null;
 
@@ -176,7 +190,6 @@ namespace SWP_BE.Services
                 FileName = ti.DataItem?.FileName ?? "Unknown File",
                 FilePath = ti.DataItem?.FilePath ?? "",
                 IsFlagged = ti.IsFlagged,
-                // Trả về tọa độ
                 Annotations = (ti.TaskItemDetails ?? new List<TaskItemDetail>()).Select(d => new AnnotationDetailDto
                 {
                     AnnotationData = d.AnnotationData,

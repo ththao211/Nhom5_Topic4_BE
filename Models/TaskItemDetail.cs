@@ -14,7 +14,6 @@ namespace SWP_BE.Models
         public string Content { get; set; } = string.Empty; // Ghi chú của Annotator
         public bool IsApproved { get; set; }
 
-        // Phân loại công cụ vẽ: "BoundingBox", "Polygon", "TextClassification"...
         public string Field { get; set; } = string.Empty;
 
         public Guid TaskItemID { get; set; }

@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace SWP_BE.DTOs
 {
+    // THÊM MỚI: Class chứa thông tin Tên và Màu của nhãn
+    public class LabelInfoDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+    }
+
     public class AnnotatorTaskDto
     {
         public Guid TaskID { get; set; }
@@ -16,7 +23,7 @@ namespace SWP_BE.DTOs
     {
         public List<TaskItemDto> TaskItems { get; set; } = new();
 
-        public List<string> AvailableLabels { get; set; } = new();
+        public List<LabelInfoDto> AvailableLabels { get; set; } = new();
     }
 
     public class AnnotationDetailDto
