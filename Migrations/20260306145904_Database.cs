@@ -461,16 +461,16 @@ namespace SWP_BE.Migrations
                 columns: new[] { "RuleID", "Category", "Description", "IsActive", "RuleName", "UpdatedAt", "Value" },
                 values: new object[,]
                 {
-                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8116), 20 },
-                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8133), 2 },
-                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8135), -5 },
-                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8137), -10 },
-                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8139), -20 },
-                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8142), 50 },
-                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8143), 20 },
-                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8145), 3 },
-                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8147), 2 },
-                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8149), 1 }
+                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5525), 20 },
+                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5538), 2 },
+                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5540), -5 },
+                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5541), -10 },
+                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5542), -20 },
+                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5543), 50 },
+                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5544), 20 },
+                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5545), 3 },
+                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5546), 2 },
+                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 6, 21, 59, 2, 939, DateTimeKind.Local).AddTicks(5547), 1 }
                 });
 
             migrationBuilder.CreateIndex(

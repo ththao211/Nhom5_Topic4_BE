@@ -26,6 +26,7 @@ namespace SWP_BE.Data
         public DbSet<ExportHistory> ExportHistories { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<ReputationRule> ReputationRules { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

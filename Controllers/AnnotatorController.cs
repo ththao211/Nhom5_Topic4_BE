@@ -13,6 +13,7 @@ namespace SWP_BE.Controllers
     public class AnnotatorController : ControllerBase
     {
         private readonly AnnotatorService _service;
+
         public AnnotatorController(AnnotatorService service) { _service = service; }
 
         private Guid GetCurrentUserId()
