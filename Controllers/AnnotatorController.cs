@@ -13,6 +13,8 @@ namespace SWP_BE.Controllers
     public class AnnotatorController : ControllerBase
     {
         private readonly AnnotatorService _service;
+        private readonly Guid _mockUserId = Guid.Parse("..."); // Sau này lấy từ JWT
+
         public AnnotatorController(AnnotatorService service) { _service = service; }
 
         private Guid GetCurrentUserId()

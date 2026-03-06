@@ -12,13 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:Migrations/20260305114430_InitDB.Designer.cs
-    [Migration("20260305114430_InitDB")]
-    partial class InitDB
-========
-    [Migration("20260304034105_DBfix")]
-    partial class DBfix
->>>>>>>> origin/Login:Migrations/20260304034105_DBfix.Designer.cs
+    [Migration("20260304034300_DBfixagain")]
+    partial class DBfixagain
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,24 +67,19 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint");
+                    b.Property<string>("FileSize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("Height")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsAssigned")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("ProjectID")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("Width")
-                        .HasColumnType("int");
 
                     b.HasKey("DataID");
 
@@ -100,9 +90,11 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
                 {
-                    b.Property<Guid>("DisputeID")
+                    b.Property<int>("DisputeID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DisputeID"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -118,21 +110,16 @@ namespace SWP_BE.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("Result")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("TaskID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("DisputeID");
 
                     b.HasIndex("TaskID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Disputes");
                 });
@@ -344,6 +331,9 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("IDDetail")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ReviewAt")
                         .HasColumnType("datetime2");
 
@@ -413,9 +403,8 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TargetID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TargetID")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");
@@ -460,8 +449,9 @@ namespace SWP_BE.Migrations
                     b.Property<Guid?>("ReviewerID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("SubmissionRate")
                         .HasColumnType("float");
@@ -544,9 +534,6 @@ namespace SWP_BE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AvatarUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("CurrentTaskCount")
                         .HasColumnType("int");
 
@@ -557,9 +544,6 @@ namespace SWP_BE.Migrations
                     b.Property<string>("Expertise")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FirebaseUid")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -568,6 +552,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Password")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Role")
@@ -624,15 +609,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Task");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>

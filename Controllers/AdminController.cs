@@ -144,13 +144,32 @@ namespace SWP_BE.Controllers
             return Ok(result);
         }
 
+        // --- ĐÂY LÀ HÀM ĐÃ ĐƯỢC THÊM LOGIC BẢO MẬT ---
         [Authorize(Roles = "Admin")]
         [HttpPatch("assign-role/{id}")]
         public async Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound("User not found.");
-            if (!Enum.IsDefined(typeof(UserRole), newRole)) return BadRequest("Invalid role.");
+
+            if (!Enum.IsDefined(typeof(UserRole), newRole))
+                return BadRequest("Invalid role.");
+
+            // Lấy ID của Admin đang thực hiện lệnh này
+            var currentUserIdStr = User.FindFirst("id")?.Value
+                                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst("sub")?.Value;
+
+            if (Guid.TryParse(currentUserIdStr, out var currentUserId))
+            {
+                // 1. Không cho tự hạ cấp chính mình
+                if (user.UserID == currentUserId && newRole != UserRole.Admin)
+                    return BadRequest("You cannot downgrade your own Admin role.");
+
+                // 2. Không cho hạ cấp một Admin khác
+                if (user.Role == UserRole.Admin && user.UserID != currentUserId && newRole != UserRole.Admin)
+                    return BadRequest("Cannot downgrade another Admin.");
+            }
 
             user.Role = newRole;
             await LogActivity("Assign Role", user.UserID);

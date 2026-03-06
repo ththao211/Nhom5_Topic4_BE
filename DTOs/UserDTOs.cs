@@ -35,4 +35,29 @@ namespace SWP_BE.DTOs
         public int Score { get; set; }
         public bool IsActive { get; set; }
     }
+
+    public class UserScoreResponseDto
+    {
+        public Guid UserId { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public UserRole Role { get; set; } = 0;
+
+        public int CurrentScore { get; set; }
+        public int TotalScoreChange { get; set; }
+
+        public int TaskCount { get; set; }
+    }
+
+    public class UserProfileDto
+    {
+        public Guid UserID { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; } = 0;
+        public int Score { get; set; }
+        public int CurrentTaskCount { get; set; }
+        public bool IsActive { get; set; }
+    }
 }
