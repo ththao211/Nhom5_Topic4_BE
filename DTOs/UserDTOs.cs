@@ -3,6 +3,23 @@ using static SWP_BE.Models.User;
 
 namespace SWP_BE.DTOs
 {
+    public class ChangePasswordRequest
+    {
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
+    public class ResetPasswordRequests
+    {
+        public string Token { get; set; }
+        public string NewPassword { get; set; }
+    }
+
+    public static class PasswordResetStore
+    {
+        public static Dictionary<string, Guid> ResetTokens = new();
+    }
+
+
     // DTO hứng dữ liệu khi Admin tạo tài khoản mới
     public class UserCreateDTO
     {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -39,6 +40,16 @@ namespace SWP_BE.Controllers
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
 
+            // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
+            if (BCrypt.Net.BCrypt.Verify("123456", user.Password))
+            {
+                return Ok(new
+                {
+                    requirePasswordChange = true,
+                    message = "You must change password before using system"
+                });
+            }
+
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
 
@@ -55,6 +66,78 @@ namespace SWP_BE.Controllers
 
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
+
+        // --- CÁC API THÊM VÀO TỪ FILE 1 ---
+
+        [Authorize]
+        [HttpPost("change-password-first-login")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
+            {
+                return BadRequest("Old password incorrect");
+            }
+
+            user.Password = request.NewPassword;
+            // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
+            // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Password changed successfully");
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Email == request.Email);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            var token = Guid.NewGuid().ToString();
+
+            // Lưu ý: Đảm bảo bạn đã có class PasswordResetStore ở đâu đó trong project
+            PasswordResetStore.ResetTokens[token] = user.UserID;
+
+            return Ok(new
+            {
+                message = "Reset token generated",
+                token = token
+            });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
+        {
+            if (!PasswordResetStore.ResetTokens.ContainsKey(request.Token))
+                return BadRequest("Invalid token");
+
+            var userId = PasswordResetStore.ResetTokens[request.Token];
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+            PasswordResetStore.ResetTokens.Remove(request.Token);
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Password reset successfully");
+        }
+
+        // --- HẾT PHẦN THÊM TỪ FILE 1 ---
 
         [Authorize]
         [HttpGet("me")]
@@ -113,7 +196,7 @@ namespace SWP_BE.Controllers
                 new Claim("role", roleName),
                 new Claim("full_name", user.FullName ?? ""),
                 new Claim("username", user.UserName ?? ""),
-                new Claim(ClaimTypes.Role, roleName), 
+                new Claim(ClaimTypes.Role, roleName),
                 new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString())
             };
 

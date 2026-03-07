@@ -9,6 +9,7 @@ using static SWP_BE.Models.User;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SWP_BE.Controllers
 {
@@ -144,7 +145,6 @@ namespace SWP_BE.Controllers
             return Ok(result);
         }
 
-        // --- ĐÂY LÀ HÀM ĐÃ ĐƯỢC THÊM LOGIC BẢO MẬT ---
         [Authorize(Roles = "Admin")]
         [HttpPatch("assign-role/{id}")]
         public async Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
@@ -155,18 +155,15 @@ namespace SWP_BE.Controllers
             if (!Enum.IsDefined(typeof(UserRole), newRole))
                 return BadRequest("Invalid role.");
 
-            // Lấy ID của Admin đang thực hiện lệnh này
             var currentUserIdStr = User.FindFirst("id")?.Value
                                 ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                 ?? User.FindFirst("sub")?.Value;
 
             if (Guid.TryParse(currentUserIdStr, out var currentUserId))
             {
-                // 1. Không cho tự hạ cấp chính mình
                 if (user.UserID == currentUserId && newRole != UserRole.Admin)
                     return BadRequest("You cannot downgrade your own Admin role.");
 
-                // 2. Không cho hạ cấp một Admin khác
                 if (user.Role == UserRole.Admin && user.UserID != currentUserId && newRole != UserRole.Admin)
                     return BadRequest("Cannot downgrade another Admin.");
             }
@@ -220,7 +217,10 @@ namespace SWP_BE.Controllers
 
         private System.Threading.Tasks.Task LogActivity(string action, Guid targetUserId)
         {
-            var currentUserIdStr = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Kết hợp logic lấy Claim của File 1, đảm bảo tương thích tốt nhất
+            var currentUserIdStr = User.FindFirst("id")?.Value
+                                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
             var log = new ActivityLog
             {
