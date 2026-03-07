@@ -9,6 +9,7 @@ using static SWP_BE.Models.User;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SWP_BE.Controllers
 {
@@ -220,14 +221,17 @@ namespace SWP_BE.Controllers
 
         private System.Threading.Tasks.Task LogActivity(string action, Guid targetUserId)
         {
-            var currentUserIdStr = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserIdStr =
+                User.FindFirst("id")?.Value ??
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
             var log = new ActivityLog
             {
                 Id = Guid.NewGuid(),
                 Action = action,
                 TargetUserId = targetUserId,
-                PerformedBy = Guid.TryParse(currentUserIdStr, out var parsedId) ? parsedId : (Guid?)null,
+                PerformedBy = Guid.TryParse(currentUserIdStr, out var parsedId) ? parsedId : null,
                 CreatedAt = DateTime.UtcNow
             };
 

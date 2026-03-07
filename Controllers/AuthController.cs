@@ -39,8 +39,7 @@ namespace SWP_BE.Controllers
             {
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
-
-            if (dto.Password == "12345")
+            if (BCrypt.Net.BCrypt.Verify("12345", user.Password))
             {
                 return Ok(new
                 {
@@ -76,8 +75,10 @@ namespace SWP_BE.Controllers
             if (user == null)
                 return NotFound();
 
-            if (user.Password != request.OldPassword)
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
+            {
                 return BadRequest("Old password incorrect");
+            }
 
             user.Password = request.NewPassword;
 
@@ -119,7 +120,7 @@ namespace SWP_BE.Controllers
             if (user == null)
                 return NotFound();
 
-            user.Password = request.NewPassword;
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
             PasswordResetStore.ResetTokens.Remove(request.Token);
 
