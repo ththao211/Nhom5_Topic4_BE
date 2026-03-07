@@ -40,7 +40,7 @@ namespace SWP_BE.Controllers
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
 
-            if (dto.Password == "123456")
+            if (dto.Password == "12345")
             {
                 return Ok(new
                 {
