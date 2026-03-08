@@ -24,12 +24,19 @@ namespace SWP_BE.Services
             _emailService = emailService;
         }
 
+        // ============================================================
+        // PRIVATE HELPER: Ghi log hệ thống
+        // ============================================================
         private async System.Threading.Tasks.Task AddSystemLog(Guid userId, string actionType, Guid? targetId = null)
         {
             _context.SystemLogs.Add(new SystemLog
             {
+                // Đảm bảo truyền đúng chuỗi string
                 ActionType = actionType,
                 EntityType = "Task",
+
+                // FIX LỖI CS0029: Chuyển Guid thành String để khớp với Model
+                // Nếu targetId null thì dùng Guid.Empty.ToString() thay vì số 0
                 TargetID = (targetId ?? Guid.Empty).ToString(),
 
                 UserID = userId,
@@ -38,7 +45,10 @@ namespace SWP_BE.Services
 
             await _context.SaveChangesAsync();
         }
+
+        // ============================================================
         // 1. THÔNG BÁO GIAO TASK (Task Assigned)
+        // ============================================================
         public async System.Threading.Tasks.Task NotifyTaskAssigned(
             Guid userId,
             string taskName,
@@ -71,6 +81,8 @@ namespace SWP_BE.Services
             if (user == null) return;
 
             await AddSystemLog(userId, "Task Rejected");
+
+            // Gửi email thông báo lỗi cho người làm
             await _emailService.SendTaskAssignmentEmailAsync(
                 user.Email,
                 user.FullName,

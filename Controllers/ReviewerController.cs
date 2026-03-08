@@ -20,12 +20,15 @@ namespace SWP_BE.Controllers
     {
         private readonly AppDbContext _context;
         private readonly INotificationService _notificationService;
+        private readonly ReputationService _reputationService;
 
         public ReviewerController(
             AppDbContext context,
+            ReputationService reputationService,
             INotificationService notificationService)
         {
             _context = context;
+            _reputationService = reputationService;
             _notificationService = notificationService;
         }
 
@@ -138,28 +141,24 @@ namespace SWP_BE.Controllers
             if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
                 return BadRequest("Thao tác không hợp lệ.");
 
+            // Cập nhật trạng thái terminal (Kết thúc)
             task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
             task.CompletedAt = DateTime.UtcNow;
 
             if (task.AnnotatorID.HasValue)
             {
-                _context.ReputationLogs.Add(new ReputationLog
-                {
-                    UserID = task.AnnotatorID.Value,
-                    ScoreChange = 10,
-                    Reason = $"Task {task.TaskName} Approved",
-                    TaskID = task.TaskID,
-                    CreatedAt = DateTime.UtcNow
-                });
+                // GỌI SERVICE: Tự động check RejectCount để cộng +20, -5, hoặc thưởng +2...
+                await _reputationService.HandleTaskCompletionAsync(task.AnnotatorID.Value, task);
+
                 await _notificationService.NotifyTaskApproved(task.AnnotatorID.Value, task.TaskName);
             }
 
             await _context.SaveChangesAsync();
-            return Ok("Task Approved");
+            return Ok("Task Approved và đã cập nhật điểm tín nhiệm.");
         }
 
         // ============================================================
-        // 5. REJECT (Sử dụng FeedbackDTO để fix lỗi 400)
+        // 5. REJECT (Từ chối Task)
         // ============================================================
         [HttpPost("tasks/{taskId}/reject")]
         public async Task<IActionResult> Reject(Guid taskId, [FromBody] FeedbackDTO feedback)
@@ -169,29 +168,42 @@ namespace SWP_BE.Controllers
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
 
             if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
-                return BadRequest("Task không hợp lệ hoặc không ở trạng thái chờ duyệt.");
+                return BadRequest("Task không hợp lệ.");
 
             if (string.IsNullOrWhiteSpace(feedback.Comment))
-                return BadRequest("Vui lòng nhập lý do từ chối (Comment).");
+                return BadRequest("Vui lòng nhập lý do từ chối.");
 
+            // Tăng số lần Reject lên
             task.RejectCount++;
             task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
 
-            if (task.AnnotatorID.HasValue)
+            // KIỂM TRA: Nếu đây là lần Reject thứ 4 -> Task chính thức FAIL
+            if (task.RejectCount >= 4)
             {
-                _context.ReputationLogs.Add(new ReputationLog
+                task.Status = SWP_BE.Models.Task.TaskStatus.Fail;
+                task.CompletedAt = DateTime.UtcNow;
+
+                if (task.AnnotatorID.HasValue)
                 {
-                    UserID = task.AnnotatorID.Value,
-                    ScoreChange = -5,
-                    Reason = $"Reject lần {task.RejectCount}: {feedback.Comment}",
-                    TaskID = task.TaskID,
-                    CreatedAt = DateTime.UtcNow
-                });
-                await _notificationService.NotifyTaskRejected(task.AnnotatorID.Value, task.TaskName, feedback.Comment);
+                    // GỌI SERVICE: Trừ -20đ và kiểm tra xem có bị khóa tài khoản không
+                    await _reputationService.HandleTaskCompletionAsync(task.AnnotatorID.Value, task);
+
+                    await _notificationService.NotifyTaskRejected(task.AnnotatorID.Value, task.TaskName, "Task bị FAIL do vượt quá 3 lần sửa.");
+                }
+            }
+            else
+            {
+                // Nếu chưa tới 4 lần thì trả về cho Annotator sửa tiếp
+                task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
+
+                if (task.AnnotatorID.HasValue)
+                {
+                    await _notificationService.NotifyTaskRejected(task.AnnotatorID.Value, task.TaskName, feedback.Comment);
+                }
             }
 
             await _context.SaveChangesAsync();
-            return Ok("Task Rejected");
+            return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : $"Task bị Reject lần {task.RejectCount}");
         }
 
         private Guid GetCurrentUserId()
