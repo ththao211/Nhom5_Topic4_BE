@@ -26,7 +26,7 @@ namespace SWP_BE.DTOs
         [Required] public string UserName { get; set; } = string.Empty;
         [Required] public string Password { get; set; } = string.Empty;
         [Required] public string FullName { get; set; } = string.Empty;
-        [Required] public UserRole Role { get; set; } = 0; // Manager, Annotator, Reviewer
+        [Required] public UserRole Role { get; set; } = 0; 
         [Required, EmailAddress] public string Email { get; set; } = string.Empty;
         public string? Expertise { get; set; }
     }

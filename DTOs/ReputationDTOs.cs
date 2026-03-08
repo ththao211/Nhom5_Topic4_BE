@@ -1,4 +1,4 @@
-﻿// SWP_BE/DTOs/ReputationRuleDto.cs
+﻿
 public class ReputationRuleDto
 {
     public int RuleID { get; set; }
@@ -10,7 +10,6 @@ public class ReputationRuleDto
     public DateTime UpdatedAt { get; set; }
 }
 
-// SWP_BE/DTOs/AdminDTO/UpdateRuleDto.cs
 public class UpdateRuleDto
 {
     public int Value { get; set; }

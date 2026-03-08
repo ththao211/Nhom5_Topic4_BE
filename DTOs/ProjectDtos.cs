@@ -14,7 +14,7 @@ namespace SWP_BE.DTOs
         public string? Description { get; set; }
         public string? Topic { get; set; }
         public string? ProjectType { get; set; }
-        public string? GuidelineUrl { get; set; } // Fix lỗi CS1061
+        public string? GuidelineUrl { get; set; } 
     }
 
     public class UpdateProjectDto
