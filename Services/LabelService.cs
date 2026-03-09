@@ -80,8 +80,6 @@ namespace SWP_BE.Services
         {
             var label = await _labelRepo.GetByIdAsync(id);
             if (label == null) return (false, "Nhãn không tồn tại.");
-
-            // Kiểm tra điều kiện xóa
             var isUsed = await _labelRepo.IsLabelUsedInProjectsAsync(id);
             if (isUsed) return (false, "Không thể xóa vì nhãn này đang được sử dụng trong dự án.");
 

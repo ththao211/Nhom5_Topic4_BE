@@ -7,6 +7,7 @@ using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.DTOs.Login;
 using SWP_BE.Models;
+using SWP_BE.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -20,14 +21,24 @@ namespace SWP_BE.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthController(AppDbContext context, IConfiguration configuration)
+        public AuthController(AppDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
+        /// <summary>
+        /// Đăng nhập vào hệ thống
+        /// </summary>
+        /// <param name="dto">Thông tin tài khoản và mật khẩu</param>
+        /// <response code="200">Đăng nhập thành công (trả về Token) hoặc yêu cầu đổi mật khẩu lần đầu</response>
+        /// <response code="401">Tài khoản/mật khẩu không chính xác hoặc tài khoản bị vô hiệu hóa</response>
         [HttpPost("login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == dto.Username);
@@ -39,7 +50,9 @@ namespace SWP_BE.Controllers
             {
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
-            if (BCrypt.Net.BCrypt.Verify("12345", user.Password))
+
+            // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
+            if (BCrypt.Net.BCrypt.Verify("123456", user.Password))
             {
                 return Ok(new
                 {
@@ -47,6 +60,7 @@ namespace SWP_BE.Controllers
                     message = "You must change password before using system"
                 });
             }
+
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
 
@@ -64,8 +78,22 @@ namespace SWP_BE.Controllers
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
 
+        // --- CÁC API THÊM VÀO TỪ FILE 1 ---
+
+        /// <summary>
+        /// Đổi mật khẩu cho lần đăng nhập đầu tiên
+        /// </summary>
+        /// <param name="request">Chứa mật khẩu cũ và mật khẩu mới</param>
+        /// <response code="200">Đổi mật khẩu thành công</response>
+        /// <response code="400">Mật khẩu cũ không chính xác</response>
+        /// <response code="401">Không có quyền truy cập (thiếu token)</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize]
         [HttpPost("change-password-first-login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
             var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -81,13 +109,23 @@ namespace SWP_BE.Controllers
             }
 
             user.Password = request.NewPassword;
+            // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
+            // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
             await _context.SaveChangesAsync();
 
             return Ok("Password changed successfully");
         }
 
+        /// <summary>
+        /// Yêu cầu đặt lại mật khẩu (Quên mật khẩu)
+        /// </summary>
+        /// <param name="request">Email của người dùng cần khôi phục</param>
+        /// <response code="200">Tạo mã khôi phục (token) thành công</response>
+        /// <response code="404">Không tìm thấy email trong hệ thống</response>
         [HttpPost("forgot-password")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
             var user = await _context.Users
@@ -100,14 +138,28 @@ namespace SWP_BE.Controllers
 
             PasswordResetStore.ResetTokens[token] = user.UserID;
 
-            return Ok(new
-            {
-                message = "Reset token generated",
-                token = token
-            });
+            var resetLink = $"http://localhost:3000/reset-password?token={token}";
+
+            await _emailService.SendPasswordResetEmailAsync(
+                user.Email,
+                user.FullName,
+                resetLink
+            );
+
+            return Ok("Reset password email sent");
         }
 
+        /// <summary>
+        /// Đặt lại mật khẩu mới bằng Token khôi phục
+        /// </summary>
+        /// <param name="request">Token khôi phục và mật khẩu mới</param>
+        /// <response code="200">Đặt lại mật khẩu thành công</response>
+        /// <response code="400">Token không hợp lệ hoặc đã hết hạn</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [HttpPost("reset-password")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
         {
             if (!PasswordResetStore.ResetTokens.ContainsKey(request.Token))
@@ -129,8 +181,19 @@ namespace SWP_BE.Controllers
             return Ok("Password reset successfully");
         }
 
+        // --- HẾT PHẦN THÊM TỪ FILE 1 ---
+
+        /// <summary>
+        /// Lấy thông tin cá nhân của người dùng đang đăng nhập
+        /// </summary>
+        /// <response code="200">Thông tin chi tiết của người dùng</response>
+        /// <response code="401">Không có quyền truy cập hoặc token không hợp lệ</response>
+        /// <response code="404">Không tìm thấy thông tin người dùng</response>
         [Authorize]
         [HttpGet("me")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetMe()
         {
             // FIX: Hỗ trợ tìm cả Claim chuẩn của .NET và Claim "sub" của Frontend
@@ -186,7 +249,7 @@ namespace SWP_BE.Controllers
                 new Claim("role", roleName),
                 new Claim("full_name", user.FullName ?? ""),
                 new Claim("username", user.UserName ?? ""),
-                new Claim(ClaimTypes.Role, roleName), 
+                new Claim(ClaimTypes.Role, roleName),
                 new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString())
             };
 

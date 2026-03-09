@@ -2,12 +2,14 @@
 using SWP_BE.Data;
 using SWP_BE.Models;
 using Microsoft.EntityFrameworkCore;
-
+// Thêm thư viện này để dùng các StatusCodes cho Swagger
+using Microsoft.AspNetCore.Http; 
 
 namespace SWP_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Score")] 
     public class ScoreController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,7 +19,18 @@ namespace SWP_BE.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Lấy danh sách điểm số và thống kê của Annotator hoặc Reviewer.
+        /// </summary>
+        /// <remarks>
+        /// Trả về danh sách người dùng kèm theo điểm số hiện tại, tổng điểm thay đổi và số lượng task đã làm.
+        /// Có thể lọc theo vai trò (Role) hoặc ID người dùng (UserID).
+        /// </remarks>
+        /// <param name="role">Vai trò cần lọc (vd: "Annotator", "Reviewer"). Bỏ trống để lấy tất cả.</param>
+        /// <param name="userId">ID cụ thể của người dùng cần tìm. Bỏ trống để lấy tất cả.</param>
+        /// <returns>Danh sách thống kê điểm số của người dùng.</returns>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetScores(
             [FromQuery] string? role,
             [FromQuery] Guid? userId)

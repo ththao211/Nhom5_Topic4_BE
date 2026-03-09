@@ -1,9 +1,6 @@
 ﻿using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SWP_BE.Services
 {
@@ -62,7 +59,6 @@ namespace SWP_BE.Services
             };
         }
 
-        // --- FIX LỖI 500: XÓA CŨ - THÊM MỚI AN TOÀN ---
         public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, SaveAnnotationDto dto)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
@@ -86,12 +82,12 @@ namespace SWP_BE.Services
                             AnnotationData = ann.AnnotationData,
                             Content = ann.Content,
                             Field = ann.Field,
-                            TaskItemID = itemId // Sử dụng đúng tên khóa ngoại trong Model
+                            TaskItemID = itemId
                         });
                     }
                 }
 
-                // 3. Thực thi lưu
+                // Thực thi lưu
                 await _repo.SaveChangesAsync();
                 return true;
             }
