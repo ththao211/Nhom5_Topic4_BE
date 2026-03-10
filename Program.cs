@@ -1,4 +1,6 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.IO;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,9 @@ namespace SWP_BE
     {
         public static void Main(string[] args)
         {
+            // BẮT BUỘC ĐỂ TRỊ LỖI LỆCH MÚI GIỜ CỦA POSTGRESQL (SUPABASE)
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             var builder = WebApplication.CreateBuilder(args);
 
             // 1. Cấu hình CORS
@@ -26,9 +31,11 @@ namespace SWP_BE
                           .AllowAnyHeader();
                 });
             });
+
             // ===== DB =====
+            // Đã đổi sang UseNpgsql để dùng PostgreSQL của Supabase
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // ===== Controllers & Swagger =====
             builder.Services.AddControllers();
@@ -75,7 +82,7 @@ namespace SWP_BE
                 }
             });
 
-            // ===== Dependency Injection (DI) =====
+            // ===== Dependency Injection (DI) ===== (ĐÃ DỌN SẠCH CÁC DÒNG BỊ TRÙNG)
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
@@ -85,9 +92,6 @@ namespace SWP_BE
             builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
             builder.Services.AddScoped<IProjectService, ProjectService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
-            builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
-            builder.Services.AddScoped<AnnotatorService>();
-            builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
             builder.Services.AddScoped<AnnotatorService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -101,7 +105,7 @@ namespace SWP_BE
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidateAudience = true, 
+                        ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
@@ -140,7 +144,7 @@ namespace SWP_BE
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                options.RoutePrefix = string.Empty; 
+                options.RoutePrefix = string.Empty;
             });
 
             app.UseHttpsRedirection();
