@@ -45,5 +45,8 @@ namespace SWP_BE.Models
 
         [InverseProperty("Reviewer")]
         public ICollection<Task>? ReviewerTasks { get; set; }
+
+        public virtual AnnotatorStat? AnnotatorStat { get; set; }
+        public virtual ReviewerStat? ReviewerStat { get; set; }
     }
 }

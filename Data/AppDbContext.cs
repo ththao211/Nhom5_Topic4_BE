@@ -26,6 +26,8 @@ namespace SWP_BE.Data
         public DbSet<ExportHistory> ExportHistories { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<ReputationRule> ReputationRules { get; set; }
+        public DbSet<AnnotatorStat> AnnotatorStats { get; set; }
+        public DbSet<ReviewerStat> ReviewerStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,9 +69,19 @@ namespace SWP_BE.Data
                 new ReputationRule { RuleID = 8, RuleName = "Max_Task_High", Value = 3, Category = "Limit", Description = "Max 3 task" },
                 new ReputationRule { RuleID = 9, RuleName = "Max_Task_Normal", Value = 2, Category = "Limit", Description = "Max 2 task" },
                 new ReputationRule { RuleID = 10, RuleName = "Max_Task_Warning", Value = 1, Category = "Limit", Description = "Max 1 task" },
-                // ... các rule cũ
                 new ReputationRule { RuleID = 11, RuleName = "Max_Consecutive_Fails", Value = 3, Category = "Limit", Description = "Số task Fail liên tiếp để bị khóa tài khoản" }
             );
+            // Cấu hình quan hệ 1-1 cho AnnotatorStat
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.AnnotatorStat)
+                .WithOne(s => s.User)
+                .HasForeignKey<AnnotatorStat>(s => s.UserID);
+
+            // Cấu hình quan hệ 1-1 cho ReviewerStat
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.ReviewerStat)
+                .WithOne(s => s.User)
+                .HasForeignKey<ReviewerStat>(s => s.UserID);
         }
     }
 }
