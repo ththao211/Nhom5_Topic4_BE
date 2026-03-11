@@ -6,6 +6,7 @@ using System;
 using System.Security.Claims;
 
 namespace SWP_BE.Controllers
+    
 {
     [Authorize]
     [ApiController]
@@ -13,8 +14,13 @@ namespace SWP_BE.Controllers
     public class AnnotatorController : ControllerBase
     {
         private readonly AnnotatorService _service;
+        private readonly IProgressService _progressService;
 
-        public AnnotatorController(AnnotatorService service) { _service = service; }
+        public AnnotatorController(AnnotatorService service, IProgressService progressService)
+        {
+            _service = service;
+            _progressService = progressService;
+        }
 
         private Guid GetCurrentUserId()
         {
@@ -120,6 +126,9 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _service.SubmitTask(taskId, userId, false);
+            if (!result.Success)
+                return BadRequest(result.Message);
+            await _progressService.UpdateTaskAndProject(taskId);
             return result.Success ? Ok(result.Message) : BadRequest(result.Message);
         }
 
@@ -134,6 +143,9 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _service.SubmitTask(taskId, userId, true);
+            if (!result.Success)
+                return BadRequest(result.Message);
+            await _progressService.UpdateTaskAndProject(taskId);
             return result.Success ? Ok(result.Message) : BadRequest(result.Message);
         }
 
@@ -164,5 +176,7 @@ namespace SWP_BE.Controllers
             var data = await _service.GetReputation(userId);
             return data != null ? Ok(data) : NotFound("Không thấy dữ liệu.");
         }
+
+
     }
 }

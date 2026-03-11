@@ -97,7 +97,7 @@ namespace SWP_BE
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
             builder.Services.AddScoped<ReputationService>();
-
+            builder.Services.AddScoped<IProgressService, ProgressService>();
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>

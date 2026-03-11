@@ -39,6 +39,12 @@ namespace SWP_BE.Controllers
              "12345"
         };
 
+        public static class PasswordResetStore
+        {
+            public static Dictionary<string, (Guid userId, string otp, DateTime expire)>
+                ResetTokens = new();
+        }
+
         /// <summary>
         /// Đăng nhập vào hệ thống
         /// </summary>
@@ -146,20 +152,22 @@ namespace SWP_BE.Controllers
             if (user == null)
                 return NotFound("User not found");
 
-            var token = Guid.NewGuid().ToString();
+            var otp = new Random().Next(100000, 999999).ToString();
 
-            // Lưu ý: Đảm bảo bạn đã có class PasswordResetStore ở đâu đó trong project
-            PasswordResetStore.ResetTokens[token] = user.UserID;
-
-            var resetLink = $"http://localhost:3000/reset-password?token={token}";
+            PasswordResetStore.ResetTokens[user.Email] =
+            (
+                user.UserID,
+                otp,
+                DateTime.UtcNow.AddMinutes(10)
+            );
 
             await _emailService.SendPasswordResetEmailAsync(
                 user.Email,
                 user.FullName,
-                resetLink
+                otp
             );
 
-            return Ok("Reset password email sent");
+            return Ok("OTP sent to email");
         }
 
         /// <summary>
@@ -175,19 +183,27 @@ namespace SWP_BE.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
         {
-            if (!PasswordResetStore.ResetTokens.ContainsKey(request.Token))
-                return BadRequest("Invalid token");
+            if (!PasswordResetStore.ResetTokens.ContainsKey(request.Email))
+                return BadRequest("OTP not found");
 
-            var userId = PasswordResetStore.ResetTokens[request.Token];
+            var data = PasswordResetStore.ResetTokens[request.Email];
 
-            var user = await _context.Users.FindAsync(userId);
+            // kiểm tra hết hạn
+            if (data.expire < DateTime.UtcNow)
+                return BadRequest("OTP expired");
+
+            // kiểm tra OTP
+            if (data.otp != request.Otp)
+                return BadRequest("Invalid OTP");
+
+            var user = await _context.Users.FindAsync(data.userId);
 
             if (user == null)
                 return NotFound();
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
-            PasswordResetStore.ResetTokens.Remove(request.Token);
+            PasswordResetStore.ResetTokens.Remove(request.Email);
 
             await _context.SaveChangesAsync();
 

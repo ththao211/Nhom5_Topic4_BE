@@ -23,15 +23,18 @@ namespace SWP_BE.Controllers
         private readonly AppDbContext _context;
         private readonly INotificationService _notificationService;
         private readonly ReputationService _reputationService;
+        private readonly IProgressService _progressService;
 
         public ReviewerController(
             AppDbContext context,
             ReputationService reputationService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IProgressService progressService)
         {
             _context = context;
             _reputationService = reputationService;
             _notificationService = notificationService;
+            _progressService = progressService;
         }
 
         // ============================================================
@@ -161,7 +164,16 @@ namespace SWP_BE.Controllers
             if (detail == null) return NotFound();
 
             detail.IsApproved = isApproved;
+
             await _context.SaveChangesAsync();
+
+            // UPDATE PROGRESS
+            var taskId = await _context.TaskItems
+                .Where(i => i.ItemID == detail.TaskItemID)
+                .Select(i => i.TaskID)
+                .FirstOrDefaultAsync();
+
+            await _progressService.UpdateTaskAndProject(taskId);
 
             return Ok(new { message = isApproved ? "Đã đánh dấu ĐÚNG" : "Đã đánh dấu SAI" });
         }
@@ -203,6 +215,7 @@ namespace SWP_BE.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await _progressService.UpdateTaskAndProject(task.TaskID);
             return Ok("Task Approved và đã cập nhật điểm tín nhiệm.");
         }
 
@@ -265,6 +278,8 @@ namespace SWP_BE.Controllers
             }
 
             await _context.SaveChangesAsync();
+            // UPDATE PROGRESS
+            await _progressService.UpdateTaskAndProject(task.TaskID);
             return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : $"Task bị Reject lần {task.RejectCount}");
         }
 
@@ -282,5 +297,7 @@ namespace SWP_BE.Controllers
             }
             return userId;
         }
+
+        
     }
 }

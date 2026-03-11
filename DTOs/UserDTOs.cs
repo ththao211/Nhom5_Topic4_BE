@@ -10,7 +10,8 @@ namespace SWP_BE.DTOs
     }
     public class ResetPasswordRequests
     {
-        public string Token { get; set; }
+        public string Email { get; set; }
+        public string Otp { get; set; }
         public string NewPassword { get; set; }
     }
 

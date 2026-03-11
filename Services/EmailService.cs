@@ -9,7 +9,7 @@ namespace SWP_BE.Services
     public interface IEmailService
     {
         Task SendTaskAssignmentEmailAsync(string toEmail, string toName, string taskName, string projectName, string deadline);
-        Task SendPasswordResetEmailAsync(string toEmail, string toName, string resetLink);
+        Task SendPasswordResetEmailAsync(string toEmail, string toName, string otp);
     }
 
     public class EmailService : IEmailService
@@ -59,7 +59,7 @@ namespace SWP_BE.Services
             }
         }
 
-        public async Task SendPasswordResetEmailAsync(string toEmail, string toName, string resetLink)
+        public async Task SendPasswordResetEmailAsync(string toEmail, string toName, string otp)
         {
             var emailSettings = _config.GetSection("EmailSettings");
             var smtpServer = emailSettings["SmtpServer"];
@@ -71,24 +71,39 @@ namespace SWP_BE.Services
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(senderName, senderEmail));
             message.To.Add(new MailboxAddress(toName, toEmail));
-            message.Subject = "[LabelMaster] Reset mật khẩu";
+            message.Subject = "[LabelMaster] Mã OTP đặt lại mật khẩu";
 
             var bodyBuilder = new BodyBuilder();
             bodyBuilder.HtmlBody = $@"
         <div style='font-family: Arial; max-width:600px; border:1px solid #ddd; padding:20px'>
-            <h2 style='color:#2563eb'>Reset Password</h2>
-            <p>Chào <b>{toName}</b>,</p>
-            <p>Bạn vừa yêu cầu đặt lại mật khẩu.</p>
+            <h2 style='color:#2563eb'>Password Reset OTP</h2>
 
-            <p>
-                <a href='{resetLink}'
-                   style='background:#2563eb;color:white;padding:10px 20px;
-                          text-decoration:none;border-radius:5px'>
-                   Reset Password
-                </a>
+            <p>Chào <b>{toName}</b>,</p>
+
+            <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản LabelMaster.</p>
+
+            <p style='font-size:18px'>
+                Mã OTP của bạn là:
+            </p>
+
+            <div style='
+                font-size:32px;
+                font-weight:bold;
+                letter-spacing:6px;
+                color:#2563eb;
+                background:#f1f5f9;
+                padding:15px;
+                text-align:center;
+                border-radius:8px'>
+                {otp}
+            </div>
+
+            <p style='margin-top:15px'>
+                Mã OTP có hiệu lực trong <b>10 phút</b>.
             </p>
 
             <p>Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p>
+
         </div>";
 
             message.Body = bodyBuilder.ToMessageBody();
