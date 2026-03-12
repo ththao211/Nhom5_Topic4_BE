@@ -84,8 +84,12 @@ namespace SWP_BE.Controllers
         [HttpPost("task-items/{itemId}/annotation")]
         public async System.Threading.Tasks.Task<IActionResult> Save(Guid itemId, [FromBody] SaveAnnotationDto dto)
         {
-            var result = await _service.SaveAnnotation(itemId, dto);
-            return result ? Ok(new { message = "Lưu thành công" }) : BadRequest("Lưu thất bại.");
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized();
+            var result = await _service.SaveAnnotation(itemId, userId, dto);
+            return result
+                ? Ok(new { message = "Lưu thành công" })
+                : BadRequest("Bạn không có quyền sửa Task này hoặc Task đã bị khóa (đã nộp/fail).");
         }
 
         /// <summary>

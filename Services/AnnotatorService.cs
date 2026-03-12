@@ -1,6 +1,9 @@
 ﻿using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SWP_BE.Services
 {
@@ -9,6 +12,9 @@ namespace SWP_BE.Services
         private readonly IAnnotatorRepository _repo;
         public AnnotatorService(IAnnotatorRepository repo) { _repo = repo; }
 
+        // ============================================================
+        // 1. LẤY DANH SÁCH TASK CỦA ANNOTATOR
+        // ============================================================
         public async System.Threading.Tasks.Task<IEnumerable<AnnotatorTaskDto>> GetTasks(Guid userId, string? status)
         {
             var tasks = await _repo.GetTasksAsync(userId, status);
@@ -22,6 +28,9 @@ namespace SWP_BE.Services
             });
         }
 
+        // ============================================================
+        // 2. XEM CHI TIẾT TASK (BAO GỒM CÁC FILE VÀ NHÃN)
+        // ============================================================
         public async System.Threading.Tasks.Task<TaskDetailDto?> GetTaskDetail(Guid taskId, Guid userId)
         {
             var t = await _repo.GetTaskByIdAsync(taskId, userId);
@@ -59,20 +68,28 @@ namespace SWP_BE.Services
             };
         }
 
-        public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, SaveAnnotationDto dto)
+        // ============================================================
+        // 3. LƯU TỌA ĐỘ/NỘI DUNG GÁN NHÃN (LƯU TẠM)
+        // ============================================================
+        public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, Guid userId, SaveAnnotationDto dto)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
-            if (item == null) return false;
+            // 1. Phải đúng là người được giao Task (AnnotatorID == userId)
+            // 2. Task phải đang trong trạng thái được phép sửa (Status == InProgress)
+            if (item == null || item.Task == null ||
+                item.Task.AnnotatorID != userId ||
+                item.Task.Status != SWP_BE.Models.Task.TaskStatus.InProgress)
+            {
+                return false;
+            }
 
             try
             {
-                // 1. Xóa sạch các bản ghi cũ khỏi Database thông qua Repository
                 if (item.TaskItemDetails != null && item.TaskItemDetails.Any())
                 {
                     _repo.DeleteItemDetails(item.TaskItemDetails);
                 }
 
-                // 2. Thêm mới danh sách tọa độ từ Frontend
                 if (dto.Annotations != null)
                 {
                     foreach (var ann in dto.Annotations)
@@ -86,40 +103,55 @@ namespace SWP_BE.Services
                         });
                     }
                 }
-
-                // Thực thi lưu
                 await _repo.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                // Ném lỗi để log Server ghi lại nguyên nhân thực sự (thường là tràn NVARCHAR)
                 throw new Exception($"Lỗi lưu Database: {ex.Message}", ex);
             }
         }
 
+        // ============================================================
+        // 4. NỘP BÀI (SUBMIT) - TĂNG VÒNG NỘP VÀ ĐỢI REVIEW
+        // ============================================================
         public async System.Threading.Tasks.Task<(bool Success, string Message)> SubmitTask(Guid taskId, Guid userId, bool isResubmit)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return (false, "Task không tồn tại.");
-            if (isResubmit && task.CurrentRound > 3) return (false, "Đã quá 3 lần nộp lại.");
 
+            // Chỉ cho phép nộp khi Task đang ở trạng thái làm việc
+            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress)
+                return (false, "Bạn chỉ có thể nộp khi Task đang ở trạng thái InProgress.");
+
+            // Kiểm tra giới hạn: Nếu đã nộp 3 lần (vòng 4 bị Reject) thì không được nộp tiếp
+            if (isResubmit && task.CurrentRound >= 4)
+                return (false, "Bạn đã sử dụng hết 3 lần sửa bài (Vòng 4 là cơ hội cuối cùng).");
+
+            // Kiểm tra xem tất cả các file đã được gán nhãn hoặc báo lỗi (Flag) chưa
             var items = task.TaskItems ?? new List<TaskItem>();
             if (items.Any(ti => !ti.IsFlagged && !(ti.TaskItemDetails?.Any() ?? false)))
-                return (false, "Bạn chưa hoàn thành tất cả các file trong Task.");
+                return (false, "Vui lòng hoàn thành gán nhãn cho tất cả các file trước khi nộp.");
 
+            // Chuyển sang trạng thái chờ duyệt
             task.Status = SWP_BE.Models.Task.TaskStatus.PendingReview;
-            if (isResubmit) task.CurrentRound++;
+
+            // LUÔN TĂNG VÒNG NỘP: Nộp lần đầu = 1, Lần sửa 1 = 2...
+            task.CurrentRound++;
 
             await _repo.SaveChangesAsync();
-            return (true, "Nộp bài thành công.");
+            return (true, "Nộp bài thành công. Vui lòng đợi Reviewer phản hồi.");
         }
 
+        // ============================================================
+        // 5. BẮT ĐẦU LÀM (START) - HỖ TRỢ CẢ NEW VÀ REJECTED
+        // ============================================================
         public async System.Threading.Tasks.Task<bool> StartTask(Guid taskId, Guid userId)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return false;
-            if (task.Status == SWP_BE.Models.Task.TaskStatus.New)
+            // Chấp nhận chuyển sang InProgress từ trạng thái Mới (New) hoặc bị Trả về (Rejected)
+            if (task.Status == SWP_BE.Models.Task.TaskStatus.New || task.Status == SWP_BE.Models.Task.TaskStatus.Rejected)
             {
                 task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
                 await _repo.SaveChangesAsync();
@@ -127,6 +159,9 @@ namespace SWP_BE.Services
             return true;
         }
 
+        // ============================================================
+        // 6. BÁO LỖI FILE (FLAG) - TRƯỜNG HỢP ẢNH LỖI, KHÔNG GÁN NHÃN ĐC
+        // ============================================================
         public async System.Threading.Tasks.Task<bool> FlagItem(Guid itemId)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
@@ -136,6 +171,9 @@ namespace SWP_BE.Services
             return true;
         }
 
+        // ============================================================
+        // 7. KHIẾU NẠI (DISPUTE) - KHI KHÔNG ĐỒNG Ý VỚI REVIEWER
+        // ============================================================
         public async System.Threading.Tasks.Task<bool> CreateDispute(Guid taskId, Guid userId, DisputeRequestDto dto)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
@@ -156,6 +194,9 @@ namespace SWP_BE.Services
             return true;
         }
 
+        // ============================================================
+        // 8. XEM ĐIỂM TÍN NHIỆM VÀ LỊCH SỬ BIẾN ĐỘNG
+        // ============================================================
         public async System.Threading.Tasks.Task<ReputationResponseDto?> GetReputation(Guid userId)
         {
             var user = await _repo.GetUserWithLogsAsync(userId);
@@ -175,6 +216,9 @@ namespace SWP_BE.Services
             };
         }
 
+        // ============================================================
+        // 9. LẤY CHI TIẾT 1 TẤM ẢNH 
+        // ============================================================
         public async System.Threading.Tasks.Task<TaskItemDto?> GetItemDetail(Guid itemId)
         {
             var ti = await _repo.GetItemByIdAsync(itemId);

@@ -55,8 +55,7 @@ namespace SWP_BE.Services
                 TaskName = dto.TaskName,
                 Status = TaskModel.TaskStatus.New,
                 Deadline = dto.Deadline ?? DateTime.UtcNow.AddDays(7),
-                RateComplete = 0,
-                RejectCount = 0
+                RateComplete = 0
             };
 
             var taskItems = dataItems.Select(item => new TaskItem
@@ -102,7 +101,6 @@ namespace SWP_BE.Services
                 TaskName = t.TaskName,
                 Status = t.Status.ToString(),
                 RateComplete = t.RateComplete,
-                RejectCount = t.RejectCount,
                 Deadline = t.Deadline,
                 AnnotatorID = t.AnnotatorID,
                 ReviewerID = t.ReviewerID,

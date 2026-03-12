@@ -57,6 +57,7 @@ namespace SWP_BE.Repositories
             return await _context.TaskItems
                 .Include(ti => ti.DataItem)
                 .Include(ti => ti.TaskItemDetails)
+                .Include(ti => ti.Task)
                 .FirstOrDefaultAsync(ti => ti.ItemID == itemId);
         }
 
