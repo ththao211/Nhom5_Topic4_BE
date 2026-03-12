@@ -40,11 +40,15 @@ namespace SWP_BE.Services
 
             // Annotator đã submit
             var annotatedItems = task.TaskItems
-                .Count(i => i.TaskItemDetails.Any());
+                .Count(i =>
+                    !i.IsFlagged &&
+                    i.TaskItemDetails.Any());
 
             // Reviewer đã approve
             var approvedItems = task.TaskItems
-                .Count(i => i.TaskItemDetails.Any(d => d.IsApproved));
+                .Count(i =>
+                 i.TaskItemDetails.Any() &&
+                 i.TaskItemDetails.All(d => d.IsApproved));
 
             // ==============================
             // Annotator Progress
@@ -58,27 +62,6 @@ namespace SWP_BE.Services
 
             task.RateComplete = (double)approvedItems / totalItems * 100;
 
-            // ==============================
-            // Update Task Status
-            // ==============================
-
-            if (approvedItems == totalItems)
-            {
-                task.Status = TaskModel.TaskStatus.Approved;
-                task.CompletedAt = DateTime.UtcNow;
-            }
-            else if (annotatedItems == totalItems)
-            {
-                task.Status = TaskModel.TaskStatus.PendingReview;
-            }
-            else if (annotatedItems > 0)
-            {
-                task.Status = TaskModel.TaskStatus.InProgress;
-            }
-            else
-            {
-                task.Status = TaskModel.TaskStatus.New;
-            }
 
             await _context.SaveChangesAsync();
         }
