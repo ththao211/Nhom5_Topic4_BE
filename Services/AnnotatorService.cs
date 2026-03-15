@@ -42,6 +42,7 @@ namespace SWP_BE.Services
                 TaskName = t.TaskName,
                 Status = t.Status.ToString(),
                 Deadline = t.Deadline,
+                Guideline = t.Project?.GuidelineUrl ?? "",
                 CurrentRound = t.CurrentRound,
                 TaskItems = t.TaskItems.Select(ti => new TaskItemDto
                 {
@@ -69,7 +70,7 @@ namespace SWP_BE.Services
         }
 
         // ============================================================
-        // 3. LƯU TỌA ĐỘ/NỘI DUNG GÁN NHÃN (LƯU TẠM)
+        // 3. LƯU TỌA ĐỘ/NỘI DUNG GÁN NHÃN
         // ============================================================
         public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, Guid userId, SaveAnnotationDto dto)
         {
@@ -78,7 +79,8 @@ namespace SWP_BE.Services
             // 2. Task phải đang trong trạng thái được phép sửa (Status == InProgress)
             if (item == null || item.Task == null ||
                 item.Task.AnnotatorID != userId ||
-                item.Task.Status != SWP_BE.Models.Task.TaskStatus.InProgress)
+                (item.Task.Status != SWP_BE.Models.Task.TaskStatus.InProgress &&
+                item.Task.Status != SWP_BE.Models.Task.TaskStatus.Rejected))
             {
                 return false;
             }
@@ -121,7 +123,8 @@ namespace SWP_BE.Services
             if (task == null) return (false, "Task không tồn tại.");
 
             // Chỉ cho phép nộp khi Task đang ở trạng thái làm việc
-            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress)
+            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress && 
+                task.Status != SWP_BE.Models.Task.TaskStatus.Rejected)
                 return (false, "Bạn chỉ có thể nộp khi Task đang ở trạng thái InProgress.");
 
             // Kiểm tra giới hạn: Nếu đã nộp 3 lần (vòng 4 bị Reject) thì không được nộp tiếp
@@ -144,13 +147,12 @@ namespace SWP_BE.Services
         }
 
         // ============================================================
-        // 5. BẮT ĐẦU LÀM (START) - HỖ TRỢ CẢ NEW VÀ REJECTED
+        // 5. BẮT ĐẦU LÀM
         // ============================================================
         public async System.Threading.Tasks.Task<bool> StartTask(Guid taskId, Guid userId)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return false;
-            // Chấp nhận chuyển sang InProgress từ trạng thái Mới (New) hoặc bị Trả về (Rejected)
             if (task.Status == SWP_BE.Models.Task.TaskStatus.New || task.Status == SWP_BE.Models.Task.TaskStatus.Rejected)
             {
                 task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;

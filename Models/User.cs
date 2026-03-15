@@ -26,9 +26,8 @@ namespace SWP_BE.Models
         public UserRole Role { get; set; } = 0;
         public string Email { get; set; } = string.Empty;
         //Lưu UID từ Firebase trả về để tăng cường bảo mật
-        public string? FirebaseUid { get; set; }
-        // Lưu Avatar Google để hiện lên UI cho đẹp
-        public string? AvatarUrl { get; set; }
+
+        public string? GoogleAccountId { get; set; }
 
         public string? Expertise { get; set; }
         public int Score { get; set; }

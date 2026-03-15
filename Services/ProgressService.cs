@@ -72,22 +72,35 @@ namespace SWP_BE.Services
         public async System.Threading.Tasks.Task UpdateProjectProgress(Guid projectId)
         {
             var tasks = await _context.Tasks
+                .Include(t => t.TaskItems)
                 .Where(t => t.ProjectID == projectId)
                 .ToListAsync();
 
             if (!tasks.Any()) return;
-
-            var totalTasks = tasks.Count;
-
-            var projectProgress = tasks.Average(t => t.RateComplete);
 
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.ProjectID == projectId);
 
             if (project == null) return;
 
-            // Có thể lưu progress vào status
-            project.Status = $"{projectProgress:F0}% Completed";
+            var totalItems = tasks.Sum(t => t.TaskItems?.Count ?? 0);
+            double projectProgress = 0;
+
+            if (totalItems > 0)
+            {
+                double completedItems = tasks.Sum(t => (t.TaskItems?.Count ?? 0) * (t.RateComplete / 100.0));
+                projectProgress = (completedItems / totalItems) * 100;
+            }
+
+            // CHỈ GÁN 3 TRẠNG THÁI GỐC (Thay "ProjectStatus" bằng tên Enum của bạn nếu cần)
+            if (projectProgress >= 100)
+            {
+                project.Status = "Closed";
+            }
+            else if (projectProgress > 0 && project.Status == "Open")
+            {
+                project.Status = "Processing";
+            }
 
             await _context.SaveChangesAsync();
         }
