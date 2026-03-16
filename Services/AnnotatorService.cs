@@ -42,6 +42,7 @@ namespace SWP_BE.Services
                 TaskName = t.TaskName,
                 Status = t.Status.ToString(),
                 Deadline = t.Deadline,
+                Guideline = t.Project?.GuidelineUrl ?? "",
                 CurrentRound = t.CurrentRound,
                 TaskItems = t.TaskItems.Select(ti => new TaskItemDto
                 {

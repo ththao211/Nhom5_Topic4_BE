@@ -1,16 +1,18 @@
-﻿using System.Security.Claims;
+﻿
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs.AdminDTO;
 using SWP_BE.Models;
-using static SWP_BE.Models.User;
+using SWP_BE.Services;
 using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Http;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using static SWP_BE.Models.User;
 
 namespace SWP_BE.Controllers
 {
@@ -19,7 +21,8 @@ namespace SWP_BE.Controllers
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
-        public AdminController(AppDbContext context) { _context = context; }
+        private readonly IEmailService _emailService;
+        public AdminController(AppDbContext context, IEmailService _emailService) { _context = context; _emailService = _emailService; }
 
         /// <summary>
         /// Tạo mới một người dùng (Admin)
@@ -72,6 +75,7 @@ namespace SWP_BE.Controllers
             _context.Users.Add(user);
             await LogActivity($"Create {user.Role} Account: {user.UserName}", user.UserID);
             await _context.SaveChangesAsync();
+            await _emailService.SendAccountEmail(dto.Email, dto.Username, dto.Password);
 
             return Ok(new
             {
