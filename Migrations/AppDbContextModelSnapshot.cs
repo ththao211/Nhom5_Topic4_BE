@@ -647,6 +647,9 @@ namespace SWP_BE.Migrations
                     b.Property<double?>("FirstRate")
                         .HasColumnType("double precision");
 
+                    b.Property<double?>("FirstRate")
+                        .HasColumnType("float");
+
                     b.Property<Guid>("ProjectID")
                         .HasColumnType("uuid");
 

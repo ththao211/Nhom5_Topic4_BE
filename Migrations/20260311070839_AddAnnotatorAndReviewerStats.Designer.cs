@@ -12,8 +12,13 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
     [Migration("20260311070839_AddAnnotatorAndReviewerStats")]
     partial class AddAnnotatorAndReviewerStats
+========
+    [Migration("20260310140406_InitialSupabase")]
+    partial class InitialSupabase
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,7 +41,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<Guid?>("PerformedBy")
                         .HasColumnType("uuid");
@@ -125,7 +134,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("ManagerComment")
                         .IsRequired()
@@ -136,7 +149,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ResolvedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -164,7 +181,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("Format")
                         .IsRequired()
@@ -220,10 +241,17 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("Deadline")
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("Deadline")
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -295,7 +323,11 @@ namespace SWP_BE.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReputationLogID"));
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<int>("NewScore")
                         .HasColumnType("integer");
@@ -354,7 +386,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<int>("Value")
                         .HasColumnType("integer");
@@ -371,7 +407,11 @@ namespace SWP_BE.Migrations
                             Description = "Hoàn thành ngay lần đầu (0 reject)",
                             IsActive = true,
                             RuleName = "Reward_Perfect",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2054),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8081),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 20
                         },
                         new
@@ -381,7 +421,11 @@ namespace SWP_BE.Migrations
                             Description = "Thưởng thêm nếu RateComplete > 95%",
                             IsActive = true,
                             RuleName = "Bonus_HighRate",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2067),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8091),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 2
                         },
                         new
@@ -391,7 +435,11 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 2",
                             IsActive = true,
                             RuleName = "Penalty_Reject_2",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2069),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8093),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = -5
                         },
                         new
@@ -401,7 +449,11 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 3",
                             IsActive = true,
                             RuleName = "Penalty_Reject_3",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2070),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8094),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = -10
                         },
                         new
@@ -411,7 +463,11 @@ namespace SWP_BE.Migrations
                             Description = "Task bị Fail (Reject lần 4)",
                             IsActive = true,
                             RuleName = "Penalty_Task_Fail",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2071),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8095),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = -20
                         },
                         new
@@ -421,7 +477,11 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng >= 50đ",
                             IsActive = true,
                             RuleName = "High_Threshold",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2072),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8096),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 50
                         },
                         new
@@ -431,7 +491,11 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng 20 - 50đ",
                             IsActive = true,
                             RuleName = "Low_Threshold",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2074),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8097),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 20
                         },
                         new
@@ -441,7 +505,11 @@ namespace SWP_BE.Migrations
                             Description = "Max 3 task",
                             IsActive = true,
                             RuleName = "Max_Task_High",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2076),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8098),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 3
                         },
                         new
@@ -451,7 +519,11 @@ namespace SWP_BE.Migrations
                             Description = "Max 2 task",
                             IsActive = true,
                             RuleName = "Max_Task_Normal",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2077),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8099),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 2
                         },
                         new
@@ -461,7 +533,11 @@ namespace SWP_BE.Migrations
                             Description = "Max 1 task",
                             IsActive = true,
                             RuleName = "Max_Task_Warning",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2078),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8100),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 1
                         },
                         new
@@ -471,7 +547,11 @@ namespace SWP_BE.Migrations
                             Description = "Số task Fail liên tiếp để bị khóa tài khoản",
                             IsActive = true,
                             RuleName = "Max_Consecutive_Fails",
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                             UpdatedAt = new DateTime(2026, 3, 11, 14, 8, 39, 35, DateTimeKind.Local).AddTicks(2078),
+========
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8101),
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
                             Value = 3
                         });
                 });
@@ -489,7 +569,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("ErrorRegion")
                         .IsRequired()
@@ -522,7 +606,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("ReviewAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<Guid>("ReviewerID")
                         .HasColumnType("uuid");
@@ -580,7 +668,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("Value")
                         .IsRequired()
@@ -606,7 +698,11 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -636,16 +732,27 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<int>("CurrentRound")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Deadline")
+<<<<<<<< HEAD:Migrations/20260311070839_AddAnnotatorAndReviewerStats.Designer.cs
                         .HasColumnType("timestamp without time zone");
+========
+                        .HasColumnType("timestamp with time zone");
+>>>>>>>> origin/Project:Migrations/20260310140406_InitialSupabase.Designer.cs
 
                     b.Property<Guid>("ProjectID")
                         .HasColumnType("uuid");

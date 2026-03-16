@@ -78,6 +78,10 @@ namespace SWP_BE.Services
 
             if (!tasks.Any()) return;
 
+            var totalTasks = tasks.Count;
+
+            var projectProgress = tasks.Average(t => t.RateComplete);
+
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.ProjectID == projectId);
 
