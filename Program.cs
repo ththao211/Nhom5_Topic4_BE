@@ -1,7 +1,11 @@
-﻿using System.Text;
+﻿using System;
+using System.IO;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
@@ -12,46 +16,73 @@ namespace SWP_BE
     {
         public static void Main(string[] args)
         {
+            // BẮT BUỘC ĐỂ TRỊ LỖI LỆCH MÚI GIỜ CỦA POSTGRESQL (SUPABASE)
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // ===== DB =====
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")));
-
-            // ===== Controllers =====
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(options =>
+            // 1. Cấu hình CORS
+            builder.Services.AddCors(options =>
             {
-                options.SwaggerDoc("v1", new() { Title = "SWP-BE", Version = "v1" });
-
-                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                options.AddPolicy("AllowAll", policy =>
                 {
-                    Name = "Authorization",
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    BearerFormat = "JWT",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                    Description = "Enter: Bearer {your token}"
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
                 });
-
-                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
             });
 
+            // ===== DB =====
+            // Đã đổi sang UseNpgsql để dùng PostgreSQL của Supabase
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // ===== Controllers & Swagger =====
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+
+            // CẤU HÌNH SWAGGER ĐỂ HIỆN GHI CHÚ VÀ NÚT AUTHORIZE
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Data Labeling Support API",
+                    Version = "v1.0",
+                    Description = "API phục vụ dự án Gán nhãn dữ liệu - Nhóm 5 Topic 4"
+                });
+
+                // Cấu hình nút Authorize (Ổ khóa)
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Dán Token vào đây (Không cần gõ chữ Bearer):"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+
+                // QUAN TRỌNG: Summary tiếng Việt từ Controller
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath);
+                }
+            });
+
+            // ===== Dependency Injection (DI) ===== (ĐÃ DỌN SẠCH CÁC DÒNG BỊ TRÙNG)
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
@@ -67,7 +98,6 @@ namespace SWP_BE
             builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
             builder.Services.AddScoped<ReputationService>();
             builder.Services.AddScoped<IProgressService, ProgressService>();
-
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -78,26 +108,48 @@ namespace SWP_BE
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
-
                         IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                        RoleClaimType = ClaimTypes.Role,
+                        NameClaimType = ClaimTypes.NameIdentifier
                     };
                 });
 
             var app = builder.Build();
 
-            // ===== Swagger =====
-            if (app.Environment.IsDevelopment())
+            // 2. TRẢ VỀ JSON LỖI (Giúp FE dễ xử lý)
+            app.UseStatusCodePages(async context =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                context.HttpContext.Response.ContentType = "application/json";
+                var responseObj = new
+                {
+                    message = "Yêu cầu không hợp lệ hoặc bạn không có quyền truy cập",
+                    error = context.HttpContext.Response.StatusCode switch
+                    {
+                        401 => "Unauthorized",
+                        403 => "Forbidden",
+                        404 => "Not Found",
+                        405 => "Method Not Allowed",
+                        _ => "Error"
+                    },
+                    statusCode = context.HttpContext.Response.StatusCode
+                };
+                await context.HttpContext.Response.WriteAsJsonAsync(responseObj);
+            });
+
+            // ===== Swagger Middleware =====
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
+                options.RoutePrefix = string.Empty;
+            });
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
+            app.UseCors("AllowAll");
 
             app.UseAuthentication();
             app.UseAuthorization();

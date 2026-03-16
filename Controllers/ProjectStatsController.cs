@@ -23,12 +23,11 @@ namespace SWP_BE.Controllers
         {
             _context = context;
         }
-
         /// <summary>
         /// [Role: Admin, Manager] Lấy thống kê tổng quan của một dự án.
         /// </summary>
         /// <remarks>
-        /// Trả về tổng số task, số lượng Approved/Pending/Rejected và tỷ lệ hoàn thành (%).
+        /// Trả về tổng số task, số lượng Approved/Pending/Rejected và tỷ lệ hoàn thành (%) dựa trên số lượng DataItem.
         /// </remarks>
         /// <param name="projectId">ID của dự án (Guid)</param>
         /// <response code="200">Trả về thống kê dự án.</response>
@@ -40,26 +39,30 @@ namespace SWP_BE.Controllers
         public async System.Threading.Tasks.Task<IActionResult> GetProjectStatistics(Guid projectId)
         {
             var tasks = await _context.Tasks
+                .Include(t => t.TaskItems)
                 .Where(t => t.ProjectID == projectId)
                 .ToListAsync();
 
             if (!tasks.Any())
                 return NotFound("No tasks found");
-
-            var total = tasks.Count;
-            // [ĐÃ SỬA] Dùng Enum thay vì string
-            var approved = tasks.Count(t => t.Status == TaskModel.TaskStatus.Approved);
-            var pending = tasks.Count(t => t.Status == TaskModel.TaskStatus.PendingReview); // Đổi Pending thành PendingReview theo Model
-            var rejected = tasks.Count(t => t.Status == TaskModel.TaskStatus.Rejected);
-
-            double rateComplete = total == 0 ? 0 : (double)approved / total * 100;
+            var totalTasks = tasks.Count;
+            var approvedTasks = tasks.Count(t => t.Status == TaskModel.TaskStatus.Approved);
+            var pendingTasks = tasks.Count(t => t.Status == TaskModel.TaskStatus.PendingReview);
+            var rejectedTasks = tasks.Count(t => t.Status == TaskModel.TaskStatus.Rejected);
+            var totalItems = tasks.Sum(t => t.TaskItems?.Count ?? 0);
+            var completedItems = tasks.Where(t => t.Status == TaskModel.TaskStatus.Approved)
+                                      .Sum(t => t.TaskItems?.Count ?? 0);
+            double rateComplete = totalItems == 0 ? 0 : (double)completedItems / totalItems * 100;
 
             return Ok(new
             {
-                TotalTasks = total,
-                Approved = approved,
-                Pending = pending,
-                Rejected = rejected,
+                TotalTasks = totalTasks,
+                Approved = approvedTasks,
+                Pending = pendingTasks,
+                Rejected = rejectedTasks,
+                TotalItems = totalItems,
+                CompletedItems = completedItems,
+
                 RateComplete = Math.Round(rateComplete, 2)
             });
         }

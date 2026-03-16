@@ -82,7 +82,6 @@ namespace SWP_BE.Data
                 .HasOne(u => u.ReviewerStat)
                 .WithOne(s => s.User)
                 .HasForeignKey<ReviewerStat>(s => s.UserID);
-
         }
     }
 }

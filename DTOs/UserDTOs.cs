@@ -78,4 +78,9 @@ namespace SWP_BE.DTOs
         public int CurrentTaskCount { get; set; }
         public bool IsActive { get; set; }
     }
+
+    public class GoogleLoginDTO
+    {
+        public string Token { get; set; } = string.Empty;
+    }
 }

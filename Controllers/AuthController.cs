@@ -96,6 +96,74 @@ namespace SWP_BE.Controllers
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
 
+        [HttpPost("google-login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO request)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+
+                // 1. Chìa khóa để bóc Token Supabase (Nhớ thêm vào appsettings.json)
+                var supabaseSecret = _configuration["Supabase:JwtSecret"];
+                var key = Encoding.UTF8.GetBytes(supabaseSecret!);
+
+                // 2. Bóc Token ra kiểm tra
+                tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                var jwtToken = (JwtSecurityToken)validatedToken;
+
+                // 3. Lấy Email và ID Google (sub) từ trong Token
+                var email = jwtToken.Claims.FirstOrDefault(x => x.Type == "email")?.Value;
+                var googleId = jwtToken.Claims.FirstOrDefault(x => x.Type == "sub")?.Value;
+
+                if (string.IsNullOrEmpty(email))
+                    return Unauthorized(ApiResponse<object>.Fail("Token không chứa Email."));
+
+                // 4. Tìm tài khoản mà Admin đã tạo sẵn bằng Email
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+                if (user == null)
+                    return StatusCode(403, ApiResponse<object>.Fail("Tài khoản chưa được Admin tạo trong hệ thống."));
+                if (!user.IsActive)
+                    return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa."));
+                // 5. TRỌNG TÂM: Nếu lần đầu Login Google, lưu cái Google ID vào cột mới tạo!
+                if (string.IsNullOrEmpty(user.GoogleAccountId))
+                {
+                    user.GoogleAccountId = googleId;
+                    await _context.SaveChangesAsync();
+                }
+                var internalToken = GenerateJwtToken(user); 
+                string roleName = GetRoleName(user.Role);  
+
+                var responseData = new LoginResponseDTO
+                {
+                    Token = internalToken,
+                    User = new UserInfoDTO
+                    {
+                        UserId = user.UserID,
+                        FullName = user.FullName,
+                        RoleName = roleName
+                    }
+                };
+
+                return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập Google thành công"));
+            }
+            catch (Exception)
+            {
+                return Unauthorized(ApiResponse<object>.Fail("Token đăng nhập Google không hợp lệ hoặc đã hết hạn."));
+            }
+        }
+
         // --- CÁC API THÊM VÀO TỪ FILE 1 ---
 
         /// <summary>
