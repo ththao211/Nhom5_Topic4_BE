@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,9 +11,6 @@ using SWP_BE.DTOs;
 using SWP_BE.DTOs.Login;
 using SWP_BE.Models;
 using SWP_BE.Services;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using static SWP_BE.Models.User;
 
 namespace SWP_BE.Controllers
@@ -67,11 +67,12 @@ namespace SWP_BE.Controllers
             }
 
             // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
-
             bool isDefaultPassword = DefaultPasswords
             .Any(p => BCrypt.Net.BCrypt.Verify(p, user.Password));
+
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
+
             if (isDefaultPassword)
             {
                 return Ok(new
@@ -177,8 +178,6 @@ namespace SWP_BE.Controllers
             }
         }
 
-        // --- CÁC API THÊM VÀO TỪ FILE 1 ---
-
         /// <summary>
         /// Đổi mật khẩu cho lần đăng nhập đầu tiên
         /// </summary>
@@ -208,8 +207,6 @@ namespace SWP_BE.Controllers
             }
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
-            // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
             await _context.SaveChangesAsync();
 
@@ -290,120 +287,6 @@ namespace SWP_BE.Controllers
 
             return Ok("Password reset successfully");
         }
-
-        // --- HẾT PHẦN THÊM TỪ FILE 1 ---
-
-        /// <summary>
-        /// Lấy thông tin cá nhân của người dùng đang đăng nhập
-        /// </summary>
-        /// <response code="200">Thông tin chi tiết của người dùng</response>
-        /// <response code="401">Không có quyền truy cập hoặc token không hợp lệ</response>
-        /// <response code="404">Không tìm thấy thông tin người dùng</response>
-        [Authorize]
-        [HttpPost("change-password-first-login")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
-        {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-            var user = await _context.Users.FindAsync(userId);
-
-            if (user == null)
-                return NotFound();
-
-            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
-            {
-                return BadRequest("Old password incorrect");
-            }
-
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
-            // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-
-            await _context.SaveChangesAsync();
-
-            return Ok("Password changed successfully");
-        }
-
-        /// <summary>
-        /// Yêu cầu đặt lại mật khẩu (Quên mật khẩu)
-        /// </summary>
-        /// <param name="request">Email của người dùng cần khôi phục</param>
-        /// <response code="200">Tạo mã khôi phục (token) thành công</response>
-        /// <response code="404">Không tìm thấy email trong hệ thống</response>
-        [HttpPost("forgot-password")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == request.Email);
-
-            if (user == null)
-                return NotFound("User not found");
-
-            var otp = new Random().Next(100000, 999999).ToString();
-
-            PasswordResetStore.ResetTokens[user.Email] =
-            (
-                user.UserID,
-                otp,
-                DateTime.UtcNow.AddMinutes(10)
-            );
-
-            await _emailService.SendPasswordResetEmailAsync(
-                user.Email,
-                user.FullName,
-                otp
-            );
-
-            return Ok("OTP sent to email");
-        }
-
-        /// <summary>
-        /// Đặt lại mật khẩu mới bằng Token khôi phục
-        /// </summary>
-        /// <param name="request">Token khôi phục và mật khẩu mới</param>
-        /// <response code="200">Đặt lại mật khẩu thành công</response>
-        /// <response code="400">Token không hợp lệ hoặc đã hết hạn</response>
-        /// <response code="404">Không tìm thấy người dùng</response>
-        [HttpPost("reset-password")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
-        {
-            if (!PasswordResetStore.ResetTokens.ContainsKey(request.Email))
-                return BadRequest("OTP not found");
-
-            var data = PasswordResetStore.ResetTokens[request.Email];
-
-            // kiểm tra hết hạn
-            if (data.expire < DateTime.UtcNow)
-                return BadRequest("OTP expired");
-
-            // kiểm tra OTP
-            if (data.otp != request.Otp)
-                return BadRequest("Invalid OTP");
-
-            var user = await _context.Users.FindAsync(data.userId);
-
-            if (user == null)
-                return NotFound();
-
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-
-            PasswordResetStore.ResetTokens.Remove(request.Email);
-
-            await _context.SaveChangesAsync();
-
-            return Ok("Password reset successfully");
-        }
-
-        // --- HẾT PHẦN THÊM TỪ FILE 1 ---
 
         /// <summary>
         /// Lấy thông tin cá nhân của người dùng đang đăng nhập

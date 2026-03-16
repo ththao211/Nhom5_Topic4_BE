@@ -2,18 +2,11 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-#nullable disable
-
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace SWP_BE.Migrations
 {
-    /// <inheritdoc />
-<<<<<<<< HEAD:Migrations/20260310140406_InitialSupabase.cs
+
     public partial class InitialSupabase : Migration
-========
-    public partial class UpdateUserStatsAndStatus : Migration
->>>>>>>> origin/Project:Migrations/20260315161933_UpdateUserStatsAndStatus.cs
+
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -301,7 +294,6 @@ namespace SWP_BE.Migrations
                 name: "Tasks",
                 columns: table => new
                 {
-<<<<<<<< HEAD:Migrations/20260310140406_InitialSupabase.cs
                     TaskID = table.Column<Guid>(type: "uuid", nullable: false),
                     TaskName = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -315,21 +307,6 @@ namespace SWP_BE.Migrations
                     ProjectID = table.Column<Guid>(type: "uuid", nullable: false),
                     AnnotatorID = table.Column<Guid>(type: "uuid", nullable: true),
                     ReviewerID = table.Column<Guid>(type: "uuid", nullable: true)
-========
-                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TaskName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    RateComplete = table.Column<double>(type: "float", nullable: false),
-                    FirstRate = table.Column<double>(type: "float", nullable: true),
-                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CurrentRound = table.Column<int>(type: "int", nullable: false),
-                    SubmissionRate = table.Column<double>(type: "float", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AnnotatorID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewerID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
->>>>>>>> origin/Project:Migrations/20260315161933_UpdateUserStatsAndStatus.cs
                 },
                 constraints: table =>
                 {
@@ -527,7 +504,6 @@ namespace SWP_BE.Migrations
                 columns: new[] { "RuleID", "Category", "Description", "IsActive", "RuleName", "UpdatedAt", "Value" },
                 values: new object[,]
                 {
-<<<<<<<< HEAD:Migrations/20260310140406_InitialSupabase.cs
                     { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8081), 20 },
                     { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8091), 2 },
                     { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8093), -5 },
@@ -539,19 +515,6 @@ namespace SWP_BE.Migrations
                     { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8099), 2 },
                     { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8100), 1 },
                     { 11, "Limit", "Số task Fail liên tiếp để bị khóa tài khoản", true, "Max_Consecutive_Fails", new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8101), 3 }
-========
-                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(983), 20 },
-                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1001), 2 },
-                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1002), -5 },
-                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1004), -10 },
-                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1005), -20 },
-                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1006), 50 },
-                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1007), 20 },
-                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1008), 3 },
-                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1011), 2 },
-                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1012), 1 },
-                    { 11, "Limit", "Số task Fail liên tiếp để bị khóa tài khoản", true, "Max_Consecutive_Fails", new DateTime(2026, 3, 15, 23, 19, 33, 142, DateTimeKind.Local).AddTicks(1013), 3 }
->>>>>>>> origin/Project:Migrations/20260315161933_UpdateUserStatsAndStatus.cs
                 });
 
             migrationBuilder.CreateIndex(

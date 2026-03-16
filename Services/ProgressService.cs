@@ -3,6 +3,8 @@ using SWP_BE.Data;
 using SWP_BE.Models;
 using TaskModel = SWP_BE.Models.Task;
 using System.Threading.Tasks;
+using System;
+using System.Linq;
 
 namespace SWP_BE.Services
 {
@@ -62,7 +64,6 @@ namespace SWP_BE.Services
 
             task.RateComplete = (double)approvedItems / totalItems * 100;
 
-
             await _context.SaveChangesAsync();
         }
 
@@ -78,9 +79,7 @@ namespace SWP_BE.Services
 
             if (!tasks.Any()) return;
 
-            var totalTasks = tasks.Count;
-
-            var projectProgress = tasks.Average(t => t.RateComplete);
+            // Đã xóa dòng: var projectProgress = tasks.Average(t => t.RateComplete); bị lỗi trùng lặp ở đây
 
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.ProjectID == projectId);
