@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,9 +11,6 @@ using SWP_BE.DTOs;
 using SWP_BE.DTOs.Login;
 using SWP_BE.Models;
 using SWP_BE.Services;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using static SWP_BE.Models.User;
 
 namespace SWP_BE.Controllers
@@ -67,11 +67,12 @@ namespace SWP_BE.Controllers
             }
 
             // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
-
             bool isDefaultPassword = DefaultPasswords
             .Any(p => BCrypt.Net.BCrypt.Verify(p, user.Password));
+
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
+
             if (isDefaultPassword)
             {
                 return Ok(new
@@ -96,6 +97,7 @@ namespace SWP_BE.Controllers
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
 
+        [AllowAnonymous]
         [HttpPost("google-login")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
@@ -106,16 +108,24 @@ namespace SWP_BE.Controllers
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
 
-                // 1. Chìa khóa để bóc Token Supabase (Nhớ thêm vào appsettings.json)
-                var supabaseSecret = _configuration["Supabase:JwtSecret"];
-                var key = Encoding.UTF8.GetBytes(supabaseSecret!);
+                // 1. Lấy URL của Supabase từ appsettings.json
+                var supabaseUrl = _configuration["Supabase:Url"];
+                var issuer = $"{supabaseUrl}/auth/v1";
 
-                // 2. Bóc Token ra kiểm tra
+                // 2. Bóc Token bằng Public Key (Tự động tải từ Supabase)
+                var configurationManager = new Microsoft.IdentityModel.Protocols.ConfigurationManager<Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration>(
+                    $"{issuer}/.well-known/openid-configuration",
+                    new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfigurationRetriever(),
+                    new Microsoft.IdentityModel.Protocols.HttpDocumentRetriever());
+
+                var discoveryDocument = await configurationManager.GetConfigurationAsync();
+
                 tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
+                    IssuerSigningKeys = discoveryDocument.SigningKeys, // Dùng bộ chìa khóa động
+                    ValidateIssuer = true,
+                    ValidIssuer = issuer,
                     ValidateAudience = false,
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken validatedToken);
@@ -134,16 +144,19 @@ namespace SWP_BE.Controllers
 
                 if (user == null)
                     return StatusCode(403, ApiResponse<object>.Fail("Tài khoản chưa được Admin tạo trong hệ thống."));
+
                 if (!user.IsActive)
                     return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa."));
+
                 // 5. TRỌNG TÂM: Nếu lần đầu Login Google, lưu cái Google ID vào cột mới tạo!
                 if (string.IsNullOrEmpty(user.GoogleAccountId))
                 {
                     user.GoogleAccountId = googleId;
                     await _context.SaveChangesAsync();
                 }
-                var internalToken = GenerateJwtToken(user); 
-                string roleName = GetRoleName(user.Role);  
+
+                var internalToken = GenerateJwtToken(user);
+                string roleName = GetRoleName(user.Role);
 
                 var responseData = new LoginResponseDTO
                 {
@@ -158,13 +171,12 @@ namespace SWP_BE.Controllers
 
                 return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập Google thành công"));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return Unauthorized(ApiResponse<object>.Fail("Token đăng nhập Google không hợp lệ hoặc đã hết hạn."));
+                // Vẫn giữ BadRequest tạm thời để lỡ có lỗi gì Azure không giấu mất
+                return BadRequest(ApiResponse<object>.Fail($"Lỗi chi tiết từ Server: {ex.Message}"));
             }
         }
-
-        // --- CÁC API THÊM VÀO TỪ FILE 1 ---
 
         /// <summary>
         /// Đổi mật khẩu cho lần đăng nhập đầu tiên
@@ -195,8 +207,6 @@ namespace SWP_BE.Controllers
             }
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
-            // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
             await _context.SaveChangesAsync();
 
@@ -277,8 +287,6 @@ namespace SWP_BE.Controllers
 
             return Ok("Password reset successfully");
         }
-
-        // --- HẾT PHẦN THÊM TỪ FILE 1 ---
 
         /// <summary>
         /// Lấy thông tin cá nhân của người dùng đang đăng nhập

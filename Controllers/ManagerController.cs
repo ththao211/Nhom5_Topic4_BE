@@ -269,5 +269,103 @@ namespace SWP_BE.Controllers
 
             return Ok(result);
         }
+        /// <summary>
+        /// [Role: Manager] Lấy danh sách khiếu nại của dự án
+        /// </summary>
+        [HttpGet("{projectId}/disputes")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetDisputes(Guid projectId)
+        {
+            var managerId = GetManagerId();
+
+            var disputes = await _context.Disputes
+                .Include(d => d.Task)
+                .Include(d => d.User)
+                .Where(d =>
+                    d.Task.ProjectID == projectId &&
+                    d.Task.Project.ManagerID == managerId)
+                .Select(d => new
+                {
+                    d.DisputeID,
+                    d.TaskID,
+                    TaskName = d.Task.TaskName,
+                    UserName = d.User.FullName,
+                    d.Reason,
+                    d.Status,
+                    d.CreatedAt
+                })
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(disputes);
+        }
+
+        /// <summary>
+        /// [Role: Manager] Xem chi tiết khiếu nại
+        /// </summary>
+        [HttpGet("disputes/{disputeId}")]
+        public async Task<IActionResult> GetDisputeDetail(Guid disputeId)
+        {
+            var managerId = GetManagerId();
+
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d =>
+                    d.DisputeID == disputeId &&
+                    d.Task.Project.ManagerID == managerId);
+
+            if (dispute == null)
+                return NotFound();
+
+            return Ok(new
+            {
+                dispute.DisputeID,
+                dispute.TaskID,
+                TaskName = dispute.Task.TaskName,
+                Annotator = dispute.User.FullName,
+                dispute.Reason,
+                dispute.Status,
+                dispute.CreatedAt
+            });
+        }
+        // giải quyết khiếu nại
+        [HttpPatch("disputes/{disputeId}")]
+        public async Task<IActionResult> ResolveDispute(Guid disputeId, [FromQuery] string action)
+        {
+            var managerId = GetManagerId();
+
+            // Load đầy đủ thông tin Task và User liên quan để xử lý điểm
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                .Include(d => d.User) // Annotator
+                .FirstOrDefaultAsync(d => d.DisputeID == disputeId && d.Task.Project.ManagerID == managerId);
+
+            if (dispute == null) return NotFound("Dispute không tồn tại.");
+            if (dispute.Status != "Pending") return BadRequest("Dispute đã được xử lý.");
+
+            if (action == "accept")
+            {
+                dispute.Status = "Accepted";
+
+                // 1. Kết thúc Task luôn vì Manager là cấp cao nhất
+                dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
+
+            }
+            else if (action == "reject")
+            {
+                dispute.Status = "Rejected";
+
+                // Phạt điểm Annotator vì khiếu nại sai làm tốn thời gian Manager
+                dispute.User.Score -= 10;
+            }
+            else
+            {
+                return BadRequest("Action phải là accept hoặc reject.");
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Dispute resolved and scores updated." });
+        }
     }
 }

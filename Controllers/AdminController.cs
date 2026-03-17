@@ -36,52 +36,68 @@ namespace SWP_BE.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
-                return BadRequest("Username already exists");
+            var username = dto.Username.Trim();
+            var email = dto.Email.Trim();
+
+            bool usernameExists = await _context.Users
+            .AnyAsync(u => u.UserName == username);
+
+            bool emailExists = await _context.Users
+                .AnyAsync(u => u.Email == email);
+
+            if (usernameExists) return BadRequest("Username already exists");
+            if (emailExists) return BadRequest("Email already exists");
 
             var user = new User
             {
                 UserID = Guid.NewGuid(),
-                UserName = dto.Username.Trim(),
+                UserName = username,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 FullName = dto.FullName.Trim(),
-                Email = dto.Email.Trim(),
-                Expertise = dto.Expertise?.Trim() ?? string.Empty,
+                Email = email,
                 Role = (UserRole)dto.Role,
                 IsActive = true,
                 Score = 100
             };
-            // 2. LOGIC KHỞI TẠO STAT: Dựa trên Role
+
             if (user.Role == UserRole.Annotator)
-            {
-                // Khởi tạo bảng thống kê cho Annotator
-                user.AnnotatorStat = new AnnotatorStat
-                {
-                    UserID = user.UserID // Dùng chung ID với User
-                };
-            }
+                user.AnnotatorStat = new AnnotatorStat { UserID = user.UserID };
             else if (user.Role == UserRole.Reviewer)
+                user.ReviewerStat = new ReviewerStat { UserID = user.UserID };
+
+            try
             {
-                // Khởi tạo bảng thống kê cho Reviewer
-                user.ReviewerStat = new ReviewerStat
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                await LogActivity($"Created {user.Role}: {user.UserName}", user.UserID);
+
+                bool emailSent = true;
+
+                try
                 {
-                    UserID = user.UserID
-                };
+                    await _emailService.SendAccountEmail(email, username, dto.Password);
+                }
+                catch (Exception ex)
+                {
+                    emailSent = false;
+                    Console.WriteLine($"Email Error: {ex.Message}");
+                }
+
+                return Ok(new
+                {
+                    message = emailSent
+                        ? "User created and email sent successfully"
+                        : "User created but email failed",
+                    userId = user.UserID
+                });
             }
-
-            _context.Users.Add(user);
-            await LogActivity($"Create {user.Role} Account: {user.UserName}", user.UserID);
-            await _context.SaveChangesAsync();
-            await _emailService.SendAccountEmail(dto.Email, dto.Username, dto.Password);
-
-            return Ok(new
+            catch (Exception ex)
             {
-                message = "User created successfully",
-                userId = user.UserID
-            });
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -3,7 +3,6 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 using System.Net;
-using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace SWP_BE.Services
@@ -47,7 +46,7 @@ namespace SWP_BE.Services
             <p>Your account for <b>LabelMaster</b> has been created.</p>
 
             <p><b>Email:</b> {toEmail}</p>
-            <p><b>Email:</b> {username}</p>
+            <p><b>Username:</b> {username}</p>
             <p><b>Password:</b> {password}</p>
 
             <p>Please login and change your password immediately.</p>
