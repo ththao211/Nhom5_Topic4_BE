@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore; // Quan trọng
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SWP_BE.Data;
@@ -29,9 +29,10 @@ namespace SWP_BE
                 });
             });
 
-            // ===== DB Connection (ĐÃ ĐỔI SANG SQL SERVER) =====
+            // ===== DB Connection (ĐÃ ĐỔI SANG SUPABASE - POSTGRESQL) =====
+            // Sửa UseSqlServer thành UseNpgsql ở đây
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -43,7 +44,7 @@ namespace SWP_BE
                 {
                     Title = "Data Labeling Support API",
                     Version = "v1.0",
-                    Description = "API phục vụ dự án Gán nhãn dữ liệu - SQL Server Local"
+                    Description = "API phục vụ dự án Gán nhãn dữ liệu"
                 });
 
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -67,6 +68,7 @@ namespace SWP_BE
                     }
                 });
 
+                // Lưu ý: Cần cấu hình tạo file XML comment trong file .csproj để dùng tính năng này
                 var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
@@ -107,35 +109,42 @@ namespace SWP_BE
                         NameClaimType = ClaimTypes.NameIdentifier
                     };
                 });
+
             var app = builder.Build();
 
             // Cấu hình Middleware
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                    options.RoutePrefix = string.Empty;
-                });
             }
 
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
+                options.RoutePrefix = string.Empty; // Hiển thị Swagger ở trang chủ ("/")
+            });
+
+            // Xử lý custom message cho các lỗi HTTP (như 401, 403, 404)
             app.UseStatusCodePages(async context =>
             {
                 context.HttpContext.Response.ContentType = "application/json";
                 var code = context.HttpContext.Response.StatusCode;
+
+                // Tránh ghi đè file tĩnh hoặc swagger nếu lỡ bị bắt nhầm
                 await context.HttpContext.Response.WriteAsJsonAsync(new
                 {
-                    message = "Lỗi hệ thống hoặc không có quyền",
+                    message = code == 404 ? "Không tìm thấy endpoint hoặc tài nguyên" : "Lỗi hệ thống hoặc không có quyền",
                     statusCode = code
                 });
             });
 
             app.UseStaticFiles();
             app.UseCors("AllowAll");
+
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
 
             app.Run();
