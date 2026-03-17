@@ -22,7 +22,12 @@ namespace SWP_BE.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IEmailService _emailService;
-        public AdminController(AppDbContext context, IEmailService _emailService) { _context = context; _emailService = _emailService; }
+
+        public AdminController(AppDbContext context, IEmailService emailService)
+        {
+            _context = context;
+            _emailService = emailService;
+        }
 
         /// <summary>
         /// Tạo mới một người dùng (Admin)
