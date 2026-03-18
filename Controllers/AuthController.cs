@@ -45,6 +45,7 @@ namespace SWP_BE.Controllers
                 ResetTokens = new();
         }
 
+        
         /// <summary>
         /// Đăng nhập vào hệ thống
         /// </summary>
@@ -286,6 +287,56 @@ namespace SWP_BE.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Password reset successfully");
+        }
+
+        [HttpPost("reset-password-by-token")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ResetPasswordByToken(ResetPasswordByTokenRequest request)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            try
+            {
+                var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
+
+                var principal = tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidAudience = _configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero
+                }, out _);
+
+                var userId = principal.FindFirst("userId")?.Value;
+
+                if (userId == null)
+                    return BadRequest("Invalid token");
+
+                var user = await _context.Users.FindAsync(Guid.Parse(userId));
+
+                if (user == null)
+                    return NotFound();
+
+                // đổi password
+                user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+                await _context.SaveChangesAsync();
+
+                return Ok("Password set successfully");
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return BadRequest("Token expired"); 
+            }
+            catch
+            {
+                return BadRequest("Invalid token");
+            }
         }
 
         /// <summary>
