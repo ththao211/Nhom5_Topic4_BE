@@ -1,8 +1,12 @@
 ﻿using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MimeKit;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SWP_BE.Services
@@ -14,6 +18,7 @@ namespace SWP_BE.Services
         Task SendAccountEmail(string toEmail, string username, string password);
     }
 
+
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _config;
@@ -21,6 +26,33 @@ namespace SWP_BE.Services
         public EmailService(IConfiguration config)
         {
             _config = config;
+        }
+
+        private string GenerateResetToken(string email)
+        {
+            var jwtSection = _config.GetSection("Jwt");
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSection["Key"]!)
+            );
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                 new Claim(ClaimTypes.Email, email),
+                 new Claim("type", "reset_password")
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(10), 
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public async Task SendAccountEmail(string toEmail, string username, string password)
@@ -32,6 +64,11 @@ namespace SWP_BE.Services
             var senderEmail = emailSettings["SenderEmail"];
             var senderName = emailSettings["SenderName"];
             var appPassword = emailSettings["AppPassword"];
+
+            var token = GenerateResetToken(toEmail);
+
+            // đổi domain frontend 
+            var link = $"http://localhost:3000/reset-password?token={token}";
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(senderName, senderEmail));
@@ -48,6 +85,19 @@ namespace SWP_BE.Services
             <p><b>Email:</b> {toEmail}</p>
             <p><b>Username:</b> {username}</p>
             <p><b>Password:</b> {password}</p>
+            <a href='{link}' style='
+            display:inline-block;
+            padding:12px 20px;
+            background:#2563eb;
+            color:white;
+            text-decoration:none;
+            border-radius:6px'>
+            Set Password
+            </a>
+
+        <p style='margin-top:15px'>
+            This link will expire in <b>10 minutes</b>.
+        </p>
 
             <p>Please login and change your password immediately.</p>
         </div>";

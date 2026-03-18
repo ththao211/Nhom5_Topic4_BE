@@ -3,6 +3,11 @@ using static SWP_BE.Models.User;
 
 namespace SWP_BE.DTOs
 {
+    public class ResetPasswordByTokenRequest
+    {
+        public string Token { get; set; }
+        public string NewPassword { get; set; }
+    }
     public class ChangePasswordRequest
     {
         public string OldPassword { get; set; }
