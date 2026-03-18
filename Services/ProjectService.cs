@@ -44,7 +44,6 @@ namespace SWP_BE.Services
                 ProjectID = p.ProjectID,
                 ProjectName = p.ProjectName,
                 Description = p.Description,
-                Topic = p.Topic,
                 ProjectType = p.ProjectType,
                 Status = p.Status,
                 CreatedAt = p.CreatedAt,
@@ -68,7 +67,6 @@ namespace SWP_BE.Services
                 ProjectID = Guid.NewGuid(),
                 ProjectName = dto.ProjectName,
                 Description = dto.Description,
-                Topic = dto.Topic,
                 ProjectType = dto.ProjectType,
                 Status = "Open",
                 CreatedAt = DateTime.UtcNow,
@@ -87,7 +85,6 @@ namespace SWP_BE.Services
 
             project.ProjectName = dto.ProjectName;
             project.Description = dto.Description;
-            project.Topic = dto.Topic;
             project.ProjectType = dto.ProjectType;
             project.GuidelineUrl = dto.GuidelineUrl;
 
