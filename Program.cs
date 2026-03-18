@@ -16,10 +16,10 @@ namespace SWP_BE
     {
         public static void Main(string[] args)
         {
-            // BẮT BUỘC ĐỂ TRỊ LỖI LỆCH MÚI GIỜ CỦA POSTGRESQL (SUPABASE)
-            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
             var builder = WebApplication.CreateBuilder(args);
+
+            // ===== THÊM DÒNG NÀY ĐỂ FIX LỖI DATETIME CỦA POSTGRESQL =====
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
             // 1. Cấu hình CORS
             builder.Services.AddCors(options =>
@@ -32,26 +32,23 @@ namespace SWP_BE
                 });
             });
 
-            // ===== DB =====
-            // Đã đổi sang UseNpgsql để dùng PostgreSQL của Supabase
+            // ===== DB Connection (ĐÃ ĐỔI SANG SUPABASE - POSTGRESQL) =====
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // ===== Controllers & Swagger =====
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
-            // CẤU HÌNH SWAGGER ĐỂ HIỆN GHI CHÚ VÀ NÚT AUTHORIZE
+            // ===== Swagger Configuration =====
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "Data Labeling Support API",
                     Version = "v1.0",
-                    Description = "API phục vụ dự án Gán nhãn dữ liệu - Nhóm 5 Topic 4"
+                    Description = "API phục vụ dự án Gán nhãn dữ liệu"
                 });
 
-                // Cấu hình nút Authorize (Ổ khóa)
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -59,7 +56,7 @@ namespace SWP_BE
                     Scheme = "bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Dán Token vào đây (Không cần gõ chữ Bearer):"
+                    Description = "Dán Token vào đây:"
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -73,16 +70,13 @@ namespace SWP_BE
                     }
                 });
 
-                // QUAN TRỌNG: Summary tiếng Việt từ Controller
+                // Lưu ý: Cần cấu hình tạo file XML comment trong file .csproj để dùng tính năng này
                 var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                if (File.Exists(xmlPath))
-                {
-                    options.IncludeXmlComments(xmlPath);
-                }
+                if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
             });
 
-            // ===== Dependency Injection (DI) ===== (ĐÃ DỌN SẠCH CÁC DÒNG BỊ TRÙNG)
+            // ===== Dependency Injection (DI) =====
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
@@ -98,6 +92,7 @@ namespace SWP_BE
             builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
             builder.Services.AddScoped<ReputationService>();
             builder.Services.AddScoped<IProgressService, ProgressService>();
+
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -119,35 +114,33 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // 2. TRẢ VỀ JSON LỖI (Giúp FE dễ xử lý)
-            app.UseStatusCodePages(async context =>
+            // Cấu hình Middleware
+            if (app.Environment.IsDevelopment())
             {
-                context.HttpContext.Response.ContentType = "application/json";
-                var responseObj = new
-                {
-                    message = "Yêu cầu không hợp lệ hoặc bạn không có quyền truy cập",
-                    error = context.HttpContext.Response.StatusCode switch
-                    {
-                        401 => "Unauthorized",
-                        403 => "Forbidden",
-                        404 => "Not Found",
-                        405 => "Method Not Allowed",
-                        _ => "Error"
-                    },
-                    statusCode = context.HttpContext.Response.StatusCode
-                };
-                await context.HttpContext.Response.WriteAsJsonAsync(responseObj);
-            });
+                app.UseDeveloperExceptionPage();
+            }
 
-            // ===== Swagger Middleware =====
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                options.RoutePrefix = string.Empty;
+                options.RoutePrefix = string.Empty; // Hiển thị Swagger ở trang chủ ("/")
             });
 
-            app.UseHttpsRedirection();
+            // Xử lý custom message cho các lỗi HTTP (như 401, 403, 404)
+            app.UseStatusCodePages(async context =>
+            {
+                context.HttpContext.Response.ContentType = "application/json";
+                var code = context.HttpContext.Response.StatusCode;
+
+                // Tránh ghi đè file tĩnh hoặc swagger nếu lỡ bị bắt nhầm
+                await context.HttpContext.Response.WriteAsJsonAsync(new
+                {
+                    message = code == 404 ? "Không tìm thấy endpoint hoặc tài nguyên" : "Lỗi hệ thống hoặc không có quyền",
+                    statusCode = code
+                });
+            });
+
             app.UseStaticFiles();
             app.UseCors("AllowAll");
 

@@ -42,6 +42,10 @@ namespace SWP_BE.Services
 
         public async Task<(bool success, string message, Guid? taskId)> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
         {
+            var project = await _context.Projects.FirstOrDefaultAsync(p => p.ProjectID == projectId);
+            if (project == null)
+                return (false, "Project không tồn tại.", null);
+
             var dataItems = await _taskRepo.GetDataItemsByIdsAsync(projectId, dto.DataIDs);
             if (dataItems.Count != dto.DataIDs.Count || dataItems.Any(d => d.IsAssigned))
             {

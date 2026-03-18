@@ -1,7 +1,12 @@
 ﻿using MailKit.Net.Smtp;
 using MailKit.Security;
-using MimeKit;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using MimeKit;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SWP_BE.Services
@@ -10,7 +15,9 @@ namespace SWP_BE.Services
     {
         Task SendTaskAssignmentEmailAsync(string toEmail, string toName, string taskName, string projectName, string deadline);
         Task SendPasswordResetEmailAsync(string toEmail, string toName, string otp);
+        Task SendAccountEmail(string toEmail, string username, string password);
     }
+
 
     public class EmailService : IEmailService
     {
@@ -21,6 +28,89 @@ namespace SWP_BE.Services
             _config = config;
         }
 
+        private string GenerateResetToken(string email)
+        {
+            var jwtSection = _config.GetSection("Jwt");
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSection["Key"]!)
+            );
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                 new Claim(ClaimTypes.Email, email),
+                 new Claim("type", "reset_password")
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(10), 
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task SendAccountEmail(string toEmail, string username, string password)
+        {
+            var emailSettings = _config.GetSection("EmailSettings");
+
+            var smtpServer = emailSettings["SmtpServer"];
+            var port = int.Parse(emailSettings["Port"]);
+            var senderEmail = emailSettings["SenderEmail"];
+            var senderName = emailSettings["SenderName"];
+            var appPassword = emailSettings["AppPassword"];
+
+            var token = GenerateResetToken(toEmail);
+
+            // đổi domain frontend 
+            var link = $"http://localhost:3000/reset-password?token={token}";
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(senderName, senderEmail));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = "[LabelMaster] Your Account Information";
+
+            var bodyBuilder = new BodyBuilder();
+            bodyBuilder.HtmlBody = $@"
+        <div style='font-family: Arial; max-width:600px; border:1px solid #ddd; padding:20px'>
+            <h2 style='color:#2563eb'>Account Created</h2>
+
+            <p>Your account for <b>LabelMaster</b> has been created.</p>
+
+            <p><b>Email:</b> {toEmail}</p>
+            <p><b>Username:</b> {username}</p>
+            <p><b>Password:</b> {password}</p>
+            <a href='{link}' style='
+            display:inline-block;
+            padding:12px 20px;
+            background:#2563eb;
+            color:white;
+            text-decoration:none;
+            border-radius:6px'>
+            Set Password
+            </a>
+
+        <p style='margin-top:15px'>
+            This link will expire in <b>10 minutes</b>.
+        </p>
+
+            <p>Please login and change your password immediately.</p>
+        </div>";
+
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+
+            await client.ConnectAsync(smtpServer, port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(senderEmail, appPassword);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
         public async Task SendTaskAssignmentEmailAsync(string toEmail, string toName, string taskName, string projectName, string deadline)
         {
             var emailSettings = _config.GetSection("EmailSettings");
@@ -108,7 +198,7 @@ namespace SWP_BE.Services
 
             message.Body = bodyBuilder.ToMessageBody();
 
-            using var client = new SmtpClient();
+            using var client = new MailKit.Net.Smtp.SmtpClient();
             await client.ConnectAsync(smtpServer, port, SecureSocketOptions.StartTls);
             await client.AuthenticateAsync(senderEmail, appPassword);
             await client.SendAsync(message);

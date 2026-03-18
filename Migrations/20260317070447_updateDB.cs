@@ -6,188 +6,200 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateGoogleAuthRemoveFirebase : Migration
+    public partial class updateDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "AvatarUrl",
-                table: "Users");
+            migrationBuilder.AlterColumn<int>(
+                name: "FirstTryApprovedTasks",
+                table: "ReviewerStats",
+                type: "int",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
 
-            migrationBuilder.RenameColumn(
-                name: "FirebaseUid",
-                table: "Users",
-                newName: "GoogleAccountId");
+            migrationBuilder.AlterColumn<int>(
+                name: "CurrentPerfectStreak",
+                table: "ReviewerStats",
+                type: "int",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 1,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(273));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(672));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 2,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(292));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(685));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 3,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(293));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(686));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 4,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(295));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(687));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 5,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(296));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(688));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 6,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(297));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(690));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 7,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(298));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(691));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 8,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(299));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(692));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 9,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(300));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(693));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 10,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(301));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(694));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 11,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 14, 23, 24, 51, 905, DateTimeKind.Local).AddTicks(302));
+                value: new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(695));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "GoogleAccountId",
-                table: "Users",
-                newName: "FirebaseUid");
+            migrationBuilder.AlterColumn<int>(
+                name: "FirstTryApprovedTasks",
+                table: "ReviewerStats",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "int");
 
-            migrationBuilder.AddColumn<string>(
-                name: "AvatarUrl",
-                table: "Users",
-                type: "text",
-                nullable: true);
+            migrationBuilder.AlterColumn<int>(
+                name: "CurrentPerfectStreak",
+                table: "ReviewerStats",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "int");
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 1,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3823));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4912));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 2,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3838));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4930));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 3,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3839));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4932));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 4,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3841));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4933));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 5,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3842));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4934));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 6,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3843));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4935));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 7,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3845));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4937));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 8,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3847));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4938));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 9,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3848));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4939));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 10,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3886));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4941));
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
                 keyColumn: "RuleID",
                 keyValue: 11,
                 column: "UpdatedAt",
-                value: new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3887));
+                value: new DateTime(2026, 3, 17, 12, 48, 58, 940, DateTimeKind.Local).AddTicks(4942));
         }
     }
 }
