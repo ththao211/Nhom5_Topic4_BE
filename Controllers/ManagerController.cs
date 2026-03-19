@@ -280,21 +280,18 @@ namespace SWP_BE.Controllers
 
             var disputes = await _context.Disputes
                 .Include(d => d.Task)
-                .Include(d => d.User)
+                    .ThenInclude(t => t.Project)
                 .Where(d =>
                     d.Task.ProjectID == projectId &&
                     d.Task.Project.ManagerID == managerId)
                 .Select(d => new
                 {
                     d.DisputeID,
-                    d.TaskID,
                     TaskName = d.Task.TaskName,
-                    UserName = d.User.FullName,
-                    d.Reason,
-                    d.Status,
-                    d.CreatedAt
+                    ProjectName = d.Task.Project.ProjectName,
+                    Topic = d.Task.Project.Topic
                 })
-                .OrderByDescending(d => d.CreatedAt)
+                .OrderByDescending(d => d.DisputeID) 
                 .ToListAsync();
 
             return Ok(disputes);
@@ -310,6 +307,7 @@ namespace SWP_BE.Controllers
 
             var dispute = await _context.Disputes
                 .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
                 .Include(d => d.User)
                 .FirstOrDefaultAsync(d =>
                     d.DisputeID == disputeId &&
@@ -323,9 +321,13 @@ namespace SWP_BE.Controllers
                 dispute.DisputeID,
                 dispute.TaskID,
                 TaskName = dispute.Task.TaskName,
+                ProjectName = dispute.Task.Project.ProjectName,
+                Topic = dispute.Task.Project.Topic,
                 Annotator = dispute.User.FullName,
                 dispute.Reason,
                 dispute.Status,
+                EvidenceImages = new List<string>(),
+
                 dispute.CreatedAt
             });
         }

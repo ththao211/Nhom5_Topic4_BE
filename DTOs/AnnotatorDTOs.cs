@@ -56,6 +56,7 @@ namespace SWP_BE.DTOs
     public class DisputeRequestDto
     {
         public string Reason { get; set; } = string.Empty;
+        public List<string> EvidenceImages { get; set; } = new();
     }
 
     public class ReputationResponseDto
