@@ -217,7 +217,9 @@ namespace SWP_BE.Controllers
             else
             {
                 // Trả về trạng thái Rejected để Annotator sửa tiếp
+                task.CurrentRound++;
                 task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
+                await _reputationService.HandleTaskRejectionAsync(task.AnnotatorID.Value, reviewerId);
 
                 if (task.AnnotatorID.HasValue)
                 {
