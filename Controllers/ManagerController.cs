@@ -305,6 +305,7 @@ namespace SWP_BE.Controllers
         /// [Role: Manager] Xem chi tiết khiếu nại
         /// </summary>
         [HttpGet("disputes/{disputeId}")]
+        [HttpGet("disputes/{disputeId}")]
         public async Task<IActionResult> GetDisputeDetail(Guid disputeId)
         {
             var managerId = GetManagerId();
@@ -320,17 +321,31 @@ namespace SWP_BE.Controllers
             if (dispute == null)
                 return NotFound();
 
+            // 🔥 Lấy evidence từ ReviewComment
+            var evidenceImages = await _context.ReviewComments
+                .Where(rc => rc.ReviewHistory.TaskID == dispute.TaskID
+                          && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                .OrderByDescending(rc => rc.CreatedAt)
+                .Select(rc => rc.EvidenceImages)
+                .FirstOrDefaultAsync();
+
+            var images = string.IsNullOrEmpty(evidenceImages)
+                ? new List<string>()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(evidenceImages);
+
             return Ok(new
             {
                 dispute.DisputeID,
-                dispute.TaskID,
                 TaskName = dispute.Task.TaskName,
                 ProjectName = dispute.Task.Project.ProjectName,
                 Topic = dispute.Task.Project.Topic,
+
                 Annotator = dispute.User.FullName,
                 dispute.Reason,
                 dispute.Status,
-                EvidenceImages = new List<string>(),
+
+                // 🔥 Evidence của Annotator
+                EvidenceImages = images,
 
                 dispute.CreatedAt
             });

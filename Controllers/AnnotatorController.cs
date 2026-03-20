@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SWP_BE.Data;
 using SWP_BE.DTOs;
+using SWP_BE.Models;
 using SWP_BE.Services;
 using System;
 using System.Security.Claims;
@@ -15,11 +17,13 @@ namespace SWP_BE.Controllers
     {
         private readonly AnnotatorService _service;
         private readonly IProgressService _progressService;
+        private readonly AppDbContext _context;
 
-        public AnnotatorController(AnnotatorService service, IProgressService progressService)
+        public AnnotatorController(AppDbContext context, AnnotatorService service, IProgressService progressService)
         {
             _service = service;
             _progressService = progressService;
+            _context = context;
         }
 
         private Guid GetCurrentUserId()
@@ -160,11 +164,48 @@ namespace SWP_BE.Controllers
         /// Dùng khi bị Reviewer đánh rớt nhưng Annotator thấy mình làm đúng.
         /// </remarks>
         [HttpPost("tasks/{taskId}/dispute")]
-        public async System.Threading.Tasks.Task<IActionResult> Dispute(Guid taskId, [FromBody] DisputeRequestDto dto)
+        public async Task<IActionResult> CreateDispute(Guid taskId, DisputeRequestDto dto)
         {
             var userId = GetCurrentUserId();
-            var result = await _service.CreateDispute(taskId, userId, dto);
-            return result ? Ok(new { message = "Đã gửi khiếu nại" }) : BadRequest("Gửi khiếu nại thất bại.");
+
+            // 1. Tạo Dispute
+            var dispute = new Dispute
+            {
+                TaskID = taskId,
+                UserID = userId,
+                Reason = dto.Reason,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Disputes.Add(dispute);
+
+            // 2. Tạo ReviewHistory (dummy để link comment)
+            var history = new ReviewHistory
+            {
+                TaskID = taskId,
+                ReviewerID = userId, // tạm dùng annotator
+                ReviewAt = DateTime.UtcNow,
+                FinalResult = "DisputeEvidence"
+            };
+
+            _context.ReviewHistories.Add(history);
+            await _context.SaveChangesAsync();
+
+            // 3. Lưu evidence vào ReviewComment
+            var comment = new ReviewComment
+            {
+                HistoryID = history.HistoryID,
+                Comment = dto.Reason,
+
+                // 🔥 LƯU JSON ảnh vào ErrorRegion
+                EvidenceImages = System.Text.Json.JsonSerializer.Serialize(dto.EvidenceImages)
+            };
+
+            _context.ReviewComments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Dispute created with evidence" });
         }
 
         /// <summary>
