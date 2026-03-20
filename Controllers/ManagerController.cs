@@ -292,7 +292,6 @@ namespace SWP_BE.Controllers
                     d.DisputeID,
                     TaskName = d.Task.TaskName,
                     ProjectName = d.Task.Project.ProjectName,
-                    Topic = d.Task.Project.Topic
                 })
                 .OrderByDescending(d => d.DisputeID) 
                 .ToListAsync();
@@ -325,7 +324,6 @@ namespace SWP_BE.Controllers
                 dispute.TaskID,
                 TaskName = dispute.Task.TaskName,
                 ProjectName = dispute.Task.Project.ProjectName,
-                Topic = dispute.Task.Project.Topic,
                 Annotator = dispute.User.FullName,
                 dispute.Reason,
                 dispute.Status,
