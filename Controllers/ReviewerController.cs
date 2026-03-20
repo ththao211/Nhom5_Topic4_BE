@@ -79,6 +79,8 @@ namespace SWP_BE.Controllers
 
             var task = await _context.Tasks
                 .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectLabels)
+                        .ThenInclude(pl => pl.Label)
                 .Include(t => t.TaskItems).ThenInclude(i => i.DataItem)
                 .Include(t => t.TaskItems).ThenInclude(i => i.TaskItemDetails)
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
@@ -87,22 +89,35 @@ namespace SWP_BE.Controllers
 
             return Ok(new
             {
-                task.TaskID,
-                task.TaskName,
+                TaskID = task.TaskID,
+                TaskName = task.TaskName,
                 ProjectName = task.Project?.ProjectName,
                 Status = task.Status.ToString(),
-                task.CurrentRound,
-                task.RateComplete,
+                Deadline = task.Deadline,
+                Guideline = task.Project?.GuidelineUrl ?? "", 
+                CurrentRound = task.CurrentRound,
+                RateComplete = task.RateComplete,
+
+                AvailableLabels = task.Project?.ProjectLabels?
+                    .Where(pl => pl.Label != null && !string.IsNullOrEmpty(pl.Label.LabelName))
+                    .Select(pl => (object)new
+                    {
+                        Name = !string.IsNullOrEmpty(pl.CustomName) ? pl.CustomName : pl.Label.LabelName,
+                        Color = !string.IsNullOrEmpty(pl.Label.DefaultColor) ? pl.Label.DefaultColor : "#ffffff"
+                    })
+                    .ToList() ?? new List<object>(),
+
                 Items = task.TaskItems.Select(i => new {
-                    i.ItemID,
-                    i.DataItem.FilePath,
-                    i.DataItem.FileName,
+                    ItemID = i.ItemID,
+                    FileName = i.DataItem?.FileName ?? "Unknown File",
+                    FilePath = i.DataItem?.FilePath ?? "",
+                    IsFlagged = i.IsFlagged,
                     Annotations = i.TaskItemDetails.Select(d => new {
-                        d.IDDetail,
-                        d.AnnotationData,
-                        d.Content,
-                        d.Field,
-                        d.IsApproved
+                        IDDetail = d.IDDetail,
+                        AnnotationData = d.AnnotationData,
+                        Content = d.Content,
+                        Field = d.Field,
+                        IsApproved = d.IsApproved
                     })
                 })
             });
