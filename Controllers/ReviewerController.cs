@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
+using SWP_BE.Repositories;
 using SWP_BE.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace SWP_BE.Controllers
 {
@@ -24,17 +25,20 @@ namespace SWP_BE.Controllers
         private readonly INotificationService _notificationService;
         private readonly ReputationService _reputationService;
         private readonly IProgressService _progressService;
+        private readonly IReviewerRepository _reviewerRepository;
 
         public ReviewerController(
             AppDbContext context,
             ReputationService reputationService,
             INotificationService notificationService,
-            IProgressService progressService)
+            IProgressService progressService,
+            IReviewerRepository reviewerRepository)
         {
             _context = context;
             _reputationService = reputationService;
             _notificationService = notificationService;
             _progressService = progressService;
+            _reviewerRepository = reviewerRepository;
         }
 
         // ============================================================
@@ -79,6 +83,8 @@ namespace SWP_BE.Controllers
 
             var task = await _context.Tasks
                 .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectLabels)
+                        .ThenInclude(pl => pl.Label)
                 .Include(t => t.TaskItems).ThenInclude(i => i.DataItem)
                 .Include(t => t.TaskItems).ThenInclude(i => i.TaskItemDetails)
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
@@ -87,22 +93,35 @@ namespace SWP_BE.Controllers
 
             return Ok(new
             {
-                task.TaskID,
-                task.TaskName,
+                TaskID = task.TaskID,
+                TaskName = task.TaskName,
                 ProjectName = task.Project?.ProjectName,
                 Status = task.Status.ToString(),
-                task.CurrentRound,
-                task.RateComplete,
+                Deadline = task.Deadline,
+                Guideline = task.Project?.GuidelineUrl ?? "", 
+                CurrentRound = task.CurrentRound,
+                RateComplete = task.RateComplete,
+
+                AvailableLabels = task.Project?.ProjectLabels?
+                    .Where(pl => pl.Label != null && !string.IsNullOrEmpty(pl.Label.LabelName))
+                    .Select(pl => (object)new
+                    {
+                        Name = !string.IsNullOrEmpty(pl.CustomName) ? pl.CustomName : pl.Label.LabelName,
+                        Color = !string.IsNullOrEmpty(pl.Label.DefaultColor) ? pl.Label.DefaultColor : "#ffffff"
+                    })
+                    .ToList() ?? new List<object>(),
+
                 Items = task.TaskItems.Select(i => new {
-                    i.ItemID,
-                    i.DataItem.FilePath,
-                    i.DataItem.FileName,
+                    ItemID = i.ItemID,
+                    FileName = i.DataItem?.FileName ?? "Unknown File",
+                    FilePath = i.DataItem?.FilePath ?? "",
+                    IsFlagged = i.IsFlagged,
                     Annotations = i.TaskItemDetails.Select(d => new {
-                        d.IDDetail,
-                        d.AnnotationData,
-                        d.Content,
-                        d.Field,
-                        d.IsApproved
+                        IDDetail = d.IDDetail,
+                        AnnotationData = d.AnnotationData,
+                        Content = d.Content,
+                        Field = d.Field,
+                        IsApproved = d.IsApproved
                     })
                 })
             });
@@ -231,6 +250,15 @@ namespace SWP_BE.Controllers
             await _progressService.UpdateTaskAndProject(task.TaskID);
 
             return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : "Task đã được chuyển về trạng thái REJECTED");
+        }
+        [HttpGet("disputes")]
+        public async Task<IActionResult> GetReviewerDisputes()
+        {
+            var reviewerId = GetCurrentUserId();
+
+            var result = await _reviewerRepository.GetReviewerDisputes(reviewerId);
+
+            return Ok(result);
         }
 
         private Guid GetCurrentUserId()

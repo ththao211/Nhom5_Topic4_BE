@@ -24,7 +24,7 @@ namespace SWP_BE.Models
         // Liên kết với Task bị khiếu nại
         public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public Task? Task { get; set; }
+        public SWP_BE.Models.Task? Task { get; set; }
 
         // Liên kết với người gửi khiếu nại (Annotator)
         public Guid UserID { get; set; }

@@ -8,7 +8,7 @@ namespace SWP_BE.Models
         [Key]
         public int CommentID { get; set; }
         public string Comment { get; set; } = string.Empty;
-        public string ErrorRegion { get; set; } = string.Empty;
+        public string EvidenceImages { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public int HistoryID { get; set; }
         [ForeignKey("HistoryID")]

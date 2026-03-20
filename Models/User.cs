@@ -40,10 +40,10 @@ namespace SWP_BE.Models
         public ICollection<Project>? ManagedProjects { get; set; }
 
         [InverseProperty("Annotator")]
-        public ICollection<Task>? AnnotatorTasks { get; set; }
+        public ICollection<SWP_BE.Models.Task>? AnnotatorTasks { get; set; }
 
         [InverseProperty("Reviewer")]
-        public ICollection<Task>? ReviewerTasks { get; set; }
+        public ICollection<SWP_BE.Models.Task>? ReviewerTasks { get; set; }
 
         public virtual AnnotatorStat? AnnotatorStat { get; set; }
         public virtual ReviewerStat? ReviewerStat { get; set; }

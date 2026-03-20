@@ -19,6 +19,7 @@ namespace SWP_BE.Repositories
         System.Threading.Tasks.Task AddDisputeAsync(Dispute dispute);
         System.Threading.Tasks.Task<User?> GetUserWithLogsAsync(Guid userId);
         System.Threading.Tasks.Task SaveChangesAsync();
+        System.Threading.Tasks.Task<IEnumerable<Dispute>> GetDisputesByUserIdAsync(Guid userId);
     }
 
     public class AnnotatorRepository : IAnnotatorRepository
@@ -50,6 +51,16 @@ namespace SWP_BE.Repositories
                 .Include(t => t.TaskItems)
                     .ThenInclude(ti => ti.TaskItemDetails)
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.AnnotatorID == annotatorId);
+        }
+
+        public async System.Threading.Tasks.Task<IEnumerable<Dispute>> GetDisputesByUserIdAsync(Guid userId)
+        {
+            return await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Where(d => d.UserID == userId)
+                .OrderByDescending(d => d.CreatedAt) // Mới nhất xếp lên đầu
+                .ToListAsync();
         }
 
         public async System.Threading.Tasks.Task<TaskItem?> GetItemByIdAsync(Guid itemId)
