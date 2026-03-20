@@ -19,14 +19,18 @@ namespace SWP_BE.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
+        private readonly ExportService _exportService;
 
         public ManagerController(
             IProjectService projectService,
-            AppDbContext context)
+            AppDbContext context,
+            ExportService exportService)
         {
             _projectService = projectService;
             _context = context;
+            _exportService = exportService;
         }
+
 
         private Guid GetManagerId()
         {
@@ -368,6 +372,46 @@ namespace SWP_BE.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Dispute resolved and scores updated." });
+        }
+
+        // ================= YOLO =================
+        [HttpGet("yolo/{projectId}")]
+        public async Task<IActionResult> ExportYolo(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportYoloZipAsync(projectId);
+
+                return File(fileBytes, "application/zip", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Export YOLO thất bại",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // ================= COCO =================
+        [HttpGet("coco/{projectId}")]
+        public async Task<IActionResult> ExportCoco(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportCocoFileAsync(projectId);
+
+                return File(fileBytes, "application/json", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Export COCO thất bại",
+                    error = ex.Message
+                });
+            }
         }
     }
 }
