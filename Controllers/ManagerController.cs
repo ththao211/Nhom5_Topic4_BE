@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
+using SWP_BE.Models;
 using SWP_BE.Services;
 using System.Security.Claims;
 
@@ -19,12 +20,14 @@ namespace SWP_BE.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
-
+        private readonly ReputationService _reputationService;
         public ManagerController(
             IProjectService projectService,
+            ReputationService reputationService,
             AppDbContext context)
         {
             _projectService = projectService;
+            _reputationService = reputationService;
             _context = context;
         }
 
@@ -346,6 +349,21 @@ namespace SWP_BE.Controllers
             if (action == "accept")
             {
                 dispute.Status = "Accepted";
+                if(dispute.Task.Status == Models.Task.TaskStatus.Fail)
+                {
+                    dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
+                }
+                dispute.Task.CurrentRound--;// Đưa Task về vòng trước để Chấm điểm cho Annotator
+
+                if (dispute.Task.AnnotatorID.HasValue)
+                {
+                    await _reputationService.HandleTaskCompletionAsync(dispute.Task.AnnotatorID.Value, dispute.Task);// Cập nhật điểm cho Annotator sau khi Task bị trả về vòng trước
+                }
+
+                if (dispute.Task.ReviewerID.HasValue)
+                {
+                    await _reputationService.HandleReviewerDisputeLossAsync(dispute.Task.ReviewerID.Value, dispute.Task.TaskID);
+                }
 
                 // 1. Kết thúc Task luôn vì Manager là cấp cao nhất
                 dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
@@ -355,8 +373,8 @@ namespace SWP_BE.Controllers
             {
                 dispute.Status = "Rejected";
 
-                // Phạt điểm Annotator vì khiếu nại sai làm tốn thời gian Manager
-                dispute.User.Score -= 10;
+                // Gọi hàm trừng phạt Annotator vì tội khiếu nại sai
+                await _reputationService.HandleAnnotatorDisputeLossAsync(dispute.UserID, dispute.TaskID);
             }
             else
             {
