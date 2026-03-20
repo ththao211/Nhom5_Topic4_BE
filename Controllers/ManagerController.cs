@@ -300,6 +300,33 @@ namespace SWP_BE.Controllers
         }
 
         /// <summary>
+        /// [Role: Manager] Lấy TẤT CẢ khiếu nại từ TẤT CẢ dự án do Manager này quản lý (Dùng cho Dashboard)
+        /// </summary>
+        [HttpGet("disputes")] // Tuyến đường sẽ là: GET api/manager/projects/disputes
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetAllDisputesForDashboard()
+        {
+            var managerId = GetManagerId();
+
+            var disputes = await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Where(d => d.Task.Project.ManagerID == managerId) // CHỈ CẦN CHECK ĐÚNG MANAGER NÀY
+                .Select(d => new
+                {
+                    d.DisputeID,
+                    TaskName = d.Task.TaskName,
+                    ProjectName = d.Task.Project.ProjectName,
+                    Status = d.Status, // Thêm Status để Dashboard biết cái nào Pending, Accepted, Rejected
+                    d.CreatedAt        // Thêm thời gian để hiển thị
+                })
+                .OrderByDescending(d => d.CreatedAt) // Ưu tiên hiển thị khiếu nại mới nhất lên đầu
+                .ToListAsync();
+
+            return Ok(disputes);
+        }
+
+        /// <summary>
         /// [Role: Manager] Xem chi tiết khiếu nại
         /// </summary>
         [HttpGet("disputes/{disputeId}")]
@@ -318,16 +345,29 @@ namespace SWP_BE.Controllers
             if (dispute == null)
                 return NotFound();
 
+            // 🔥 Lấy evidence từ ReviewComment
+            var evidenceImages = await _context.ReviewComments
+                .Where(rc => rc.ReviewHistory.TaskID == dispute.TaskID
+                          && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                .OrderByDescending(rc => rc.CreatedAt)
+                .Select(rc => rc.EvidenceImages)
+                .FirstOrDefaultAsync();
+
+            var images = string.IsNullOrEmpty(evidenceImages)
+                ? new List<string>()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(evidenceImages);
+
             return Ok(new
             {
                 dispute.DisputeID,
-                dispute.TaskID,
                 TaskName = dispute.Task.TaskName,
                 ProjectName = dispute.Task.Project.ProjectName,
                 Annotator = dispute.User.FullName,
                 dispute.Reason,
                 dispute.Status,
-                EvidenceImages = new List<string>(),
+
+                // 🔥 Evidence của Annotator
+                EvidenceImages = images,
 
                 dispute.CreatedAt
             });

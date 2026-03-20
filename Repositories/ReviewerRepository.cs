@@ -18,20 +18,31 @@ namespace SWP_BE.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<ReviewerDisputeDto>> GetReviewerDisputes(Guid reviewerId)
+        public async Task<IEnumerable<object>> GetReviewerDisputes(Guid reviewerId)
         {
             return await _context.Disputes
                 .Include(d => d.Task)
                     .ThenInclude(t => t.Project)
                 .Where(d => d.Task.ReviewerID == reviewerId)
-                .Select(d => new ReviewerDisputeDto
+                .Select(d => new
                 {
-                    DisputeID = d.DisputeID,
+                    d.DisputeID,
                     TaskName = d.Task.TaskName,
                     ProjectName = d.Task.Project.ProjectName,
-                    EvidenceImages = new List<string>() 
+
+                    EvidenceImages = _context.ReviewComments
+                        .Where(rc => rc.ReviewHistory.TaskID == d.TaskID
+                                  && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                        .OrderByDescending(rc => rc.CreatedAt)
+                        .Select(rc => rc.EvidenceImages)
+                        .FirstOrDefault()
                 })
-                .ToListAsync();
+                .ToListAsync<object>();
+        }
+
+        Task<IEnumerable<ReviewerDisputeDto>> IReviewerRepository.GetReviewerDisputes(Guid reviewerId)
+        {
+            throw new NotImplementedException();
         }
     }
 

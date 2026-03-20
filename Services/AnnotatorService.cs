@@ -197,6 +197,27 @@ namespace SWP_BE.Services
         }
 
         // ============================================================
+        // 7.1 LẤY DANH SÁCH KHIẾU NẠI CỦA ANNOTATOR
+        // ============================================================
+        public async System.Threading.Tasks.Task<IEnumerable<object>> GetMyDisputes(Guid userId)
+        {
+            var disputes = await _repo.GetDisputesByUserIdAsync(userId);
+
+            return disputes.Select(d => new
+            {
+                DisputeID = d.DisputeID,
+                TaskID = d.TaskID,
+                TaskName = d.Task?.TaskName ?? "Unknown",
+                ProjectName = d.Task?.Project?.ProjectName ?? "Unknown",
+                Reason = d.Reason,
+                ManagerComment = d.ManagerComment,
+                Status = d.Status,
+                CreatedAt = d.CreatedAt,
+                ResolvedAt = d.ResolvedAt
+            });
+        }
+
+        // ============================================================
         // 8. XEM ĐIỂM TÍN NHIỆM VÀ LỊCH SỬ BIẾN ĐỘNG
         // ============================================================
         public async System.Threading.Tasks.Task<ReputationResponseDto?> GetReputation(Guid userId)
