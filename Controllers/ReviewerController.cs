@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
+using SWP_BE.Repositories;
 using SWP_BE.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace SWP_BE.Controllers
 {
@@ -24,17 +25,20 @@ namespace SWP_BE.Controllers
         private readonly INotificationService _notificationService;
         private readonly ReputationService _reputationService;
         private readonly IProgressService _progressService;
+        private readonly IReviewerRepository _reviewerRepository;
 
         public ReviewerController(
             AppDbContext context,
             ReputationService reputationService,
             INotificationService notificationService,
-            IProgressService progressService)
+            IProgressService progressService,
+            IReviewerRepository reviewerRepository)
         {
             _context = context;
             _reputationService = reputationService;
             _notificationService = notificationService;
             _progressService = progressService;
+            _reviewerRepository = reviewerRepository;
         }
 
         // ============================================================
@@ -246,6 +250,15 @@ namespace SWP_BE.Controllers
             await _progressService.UpdateTaskAndProject(task.TaskID);
 
             return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : "Task đã được chuyển về trạng thái REJECTED");
+        }
+        [HttpGet("disputes")]
+        public async Task<IActionResult> GetReviewerDisputes()
+        {
+            var reviewerId = GetCurrentUserId();
+
+            var result = await _reviewerRepository.GetReviewerDisputes(reviewerId);
+
+            return Ok(result);
         }
 
         private Guid GetCurrentUserId()

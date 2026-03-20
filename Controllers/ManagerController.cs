@@ -19,14 +19,18 @@ namespace SWP_BE.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
+        private readonly ExportService _exportService;
 
         public ManagerController(
             IProjectService projectService,
-            AppDbContext context)
+            AppDbContext context,
+            ExportService exportService)
         {
             _projectService = projectService;
             _context = context;
+            _exportService = exportService;
         }
+
 
         private Guid GetManagerId()
         {
@@ -279,21 +283,18 @@ namespace SWP_BE.Controllers
 
             var disputes = await _context.Disputes
                 .Include(d => d.Task)
-                .Include(d => d.User)
+                    .ThenInclude(t => t.Project)
                 .Where(d =>
                     d.Task.ProjectID == projectId &&
                     d.Task.Project.ManagerID == managerId)
                 .Select(d => new
                 {
                     d.DisputeID,
-                    d.TaskID,
                     TaskName = d.Task.TaskName,
-                    UserName = d.User.FullName,
-                    d.Reason,
-                    d.Status,
-                    d.CreatedAt
+                    ProjectName = d.Task.Project.ProjectName,
+                    Topic = d.Task.Project.Topic
                 })
-                .OrderByDescending(d => d.CreatedAt)
+                .OrderByDescending(d => d.DisputeID) 
                 .ToListAsync();
 
             return Ok(disputes);
@@ -309,6 +310,7 @@ namespace SWP_BE.Controllers
 
             var dispute = await _context.Disputes
                 .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
                 .Include(d => d.User)
                 .FirstOrDefaultAsync(d =>
                     d.DisputeID == disputeId &&
@@ -322,9 +324,13 @@ namespace SWP_BE.Controllers
                 dispute.DisputeID,
                 dispute.TaskID,
                 TaskName = dispute.Task.TaskName,
+                ProjectName = dispute.Task.Project.ProjectName,
+                Topic = dispute.Task.Project.Topic,
                 Annotator = dispute.User.FullName,
                 dispute.Reason,
                 dispute.Status,
+                EvidenceImages = new List<string>(),
+
                 dispute.CreatedAt
             });
         }
@@ -365,6 +371,46 @@ namespace SWP_BE.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Dispute resolved and scores updated." });
+        }
+
+        // ================= YOLO =================
+        [HttpGet("yolo/{projectId}")]
+        public async Task<IActionResult> ExportYolo(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportYoloZipAsync(projectId);
+
+                return File(fileBytes, "application/zip", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Export YOLO thất bại",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // ================= COCO =================
+        [HttpGet("coco/{projectId}")]
+        public async Task<IActionResult> ExportCoco(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportCocoFileAsync(projectId);
+
+                return File(fileBytes, "application/json", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Export COCO thất bại",
+                    error = ex.Message
+                });
+            }
         }
     }
 }
