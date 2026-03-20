@@ -21,8 +21,7 @@ namespace SWP_BE.Models
 
         public Guid? TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public virtual Task? Task { get; set; }
-
+        public virtual SWP_BE.Models.Task? Task { get; set; }
         public int? RuleID { get; set; }
         [ForeignKey("RuleID")]
         public virtual ReputationRule? AppliedRule { get; set; }

@@ -25,10 +25,8 @@ namespace SWP_BE.Models
 
         public TaskStatus Status { get; set; } = TaskStatus.New;
         public double RateComplete { get; set; }
-        public double? FirstRate { get; set; }
         public DateTime Deadline { get; set; }
         public int CurrentRound { get; set; }
-        public double SubmissionRate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
 

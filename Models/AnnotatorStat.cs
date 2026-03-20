@@ -23,5 +23,8 @@ namespace SWP_BE.Models
 
         // Tiêu chí 8: Phong độ (Số task perfect liên tiếp)
         public int CurrentPerfectStreak { get; set; } = 0;
+
+        //Theo dõi chuỗi Khiếu nại liên tiếp bị Manager Reject (RejectDisputedTasksStreak) để áp dụng hình phạt nếu vượt ngưỡng (3)
+        public int RejectDisputedTasksStreak { get; set; } = 0;
     }
 }

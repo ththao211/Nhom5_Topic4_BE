@@ -158,9 +158,6 @@ namespace SWP_BE.Controllers
             if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
                 return BadRequest("Thao tác không hợp lệ.");
 
-            // Chụp lại tỷ lệ lần đầu nếu Approve ngay vòng 1 để làm bằng chứng thưởng 2đ
-            if (task.CurrentRound == 1) task.FirstRate = task.RateComplete;
-
             task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
             task.CompletedAt = DateTime.UtcNow;
 
@@ -193,8 +190,6 @@ namespace SWP_BE.Controllers
             if (string.IsNullOrWhiteSpace(feedback.Comment))
                 return BadRequest("Vui lòng nhập lý do từ chối.");
 
-            // Chụp lại tỷ lệ vòng 1 khi bị Reject lần đầu
-            if (task.CurrentRound == 1) task.FirstRate = task.RateComplete;
 
             // Nếu đã tới lượt nộp thứ 4 mà vẫn sai -> Đánh FAIL và tạo Task mới cho Manager
             if (task.CurrentRound == 4)
@@ -217,7 +212,6 @@ namespace SWP_BE.Controllers
                     Status = SWP_BE.Models.Task.TaskStatus.New,
                     CurrentRound = 0,
                     RateComplete = 0,
-                    FirstRate = null,
                     AnnotatorID = null, // Manager sẽ gán người mới
                     ReviewerID = null,  // Manager sẽ gán reviewer mới
                     Deadline = DateTime.UtcNow.AddDays(3),
@@ -238,7 +232,9 @@ namespace SWP_BE.Controllers
             else
             {
                 // Trả về trạng thái Rejected để Annotator sửa tiếp
+                task.CurrentRound++;
                 task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
+                await _reputationService.HandleTaskRejectionAsync(task.AnnotatorID.Value, reviewerId);
 
                 if (task.AnnotatorID.HasValue)
                 {

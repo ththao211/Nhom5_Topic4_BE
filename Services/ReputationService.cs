@@ -1,4 +1,6 @@
-﻿using SWP_BE.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SWP_BE.Data;
+using SWP_BE.Models;
 using SWP_BE.Repositories;
 
 namespace SWP_BE.Services
@@ -6,8 +8,13 @@ namespace SWP_BE.Services
     public class ReputationService
     {
         private readonly IReputationRepository _repo;
+        private readonly AppDbContext _context;
 
-        public ReputationService(IReputationRepository repo) => _repo = repo;
+        public ReputationService(IReputationRepository repo, AppDbContext context)
+        {
+            _repo = repo;
+            _context = context;
+        }
 
         /// <summary>
         /// Xử lý tính điểm khi Task kết thúc (Approved hoặc Fail)
@@ -26,7 +33,7 @@ namespace SWP_BE.Services
             if (task.Status == Models.Task.TaskStatus.Approved)
             {
                 switch (task.CurrentRound)
-                {
+                {//fix log ở đây (reason)
                     case 1: // Perfect
                         scoreDelta = rules["Reward_Perfect"].Value; // +20
                         reason = "Perfect: Hoàn thành ngay từ đầu";
@@ -91,6 +98,35 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
+            // 2. CẬP NHẬT ANNOTATOR STATS
+            var annoStat = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == userId);
+            if (annoStat != null)
+            {
+                annoStat.TotalCompletedTasks++;
+                annoStat.RejectDisputedTasksStreak = 0; // Reset khi hoàn thành task
+
+                if (task.Status == Models.Task.TaskStatus.Approved && task.CurrentRound == 1)
+                {
+                    annoStat.FirstTryApprovedTasks++;
+                    annoStat.CurrentPerfectStreak++;
+                }
+
+                // Tính thời gian làm việc (Giờ)
+                double workHours = (DateTime.UtcNow - task.CreatedAt).TotalHours;
+                annoStat.TotalWorkingHours += workHours;
+                annoStat.AvgCompletionHours = annoStat.TotalWorkingHours / annoStat.TotalCompletedTasks;
+            }
+
+            // 3. CẬP NHẬT REVIEWER STATS (Khi Approve)
+            var revStat = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == task.ReviewerID.Value);
+            if (revStat != null && task.Status == Models.Task.TaskStatus.Approved)
+            {
+                revStat.TotalReviewedTasks++;
+                double reviewDuration = (DateTime.UtcNow - task.CreatedAt).TotalHours; // Giả định tính từ lúc tạo/giao
+                revStat.TotalReviewHours += reviewDuration;
+                revStat.AvgReviewHours = revStat.TotalReviewHours / revStat.TotalReviewedTasks;
+            }
+
             await _repo.AddLogAsync(log);
 
             // --- CHECK SA THẢI ---
@@ -136,6 +172,22 @@ namespace SWP_BE.Services
             }
 
 
+        }
+
+        /// <summary>
+        /// XỬ LÝ KHI REJECT (CẬP NHẬT CHUỖI PHONG ĐỘ)
+        /// </summary>
+        public async System.Threading.Tasks.Task HandleTaskRejectionAsync(Guid annotatorId, Guid reviewerId)
+        {
+            // Annotator: Đứt chuỗi Perfect
+            var annoStat = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == annotatorId);
+            if (annoStat != null) annoStat.CurrentPerfectStreak = 0;
+
+            // Reviewer: Tăng chuỗi Reject đúng
+            var revStat = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == reviewerId);
+            if (revStat != null) revStat.CurrentPerfectRejectStreak++;
+
+            await _context.SaveChangesAsync();
         }
 
         // Trong ReputationService.cs

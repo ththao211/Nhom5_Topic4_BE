@@ -23,1053 +23,1053 @@ namespace SWP_BE.Migrations
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Action")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("PerformedBy")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("PerformedBy")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("TargetUserId")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("TargetUserId")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("PerformedBy");
+                b.HasIndex("PerformedBy");
 
-                    b.HasIndex("TargetUserId");
+                b.HasIndex("TargetUserId");
 
-                    b.ToTable("ActivityLogs");
-                });
+                b.ToTable("ActivityLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<double>("AvgCompletionHours")
-                        .HasColumnType("float");
+                b.Property<double>("AvgCompletionHours")
+                    .HasColumnType("float");
 
-                    b.Property<int>("CurrentPerfectStreak")
-                        .HasColumnType("int");
+                b.Property<int>("CurrentPerfectStreak")
+                    .HasColumnType("int");
 
-                    b.Property<int>("FirstTryApprovedTasks")
-                        .HasColumnType("int");
+                b.Property<int>("FirstTryApprovedTasks")
+                    .HasColumnType("int");
 
-                    b.Property<int>("TotalCompletedTasks")
-                        .HasColumnType("int");
+                b.Property<int>("TotalCompletedTasks")
+                    .HasColumnType("int");
 
-                    b.Property<double>("TotalWorkingHours")
-                        .HasColumnType("float");
+                b.Property<double>("TotalWorkingHours")
+                    .HasColumnType("float");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.ToTable("AnnotatorStats");
-                });
+                b.ToTable("AnnotatorStats");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
-                {
-                    b.Property<Guid>("DataID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("DataID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FileName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FilePath")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint");
+                b.Property<long>("FileSizeBytes")
+                    .HasColumnType("bigint");
 
-                    b.Property<string>("FileType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FileType")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("Height")
-                        .HasColumnType("int");
+                b.Property<int?>("Height")
+                    .HasColumnType("int");
 
-                    b.Property<bool>("IsAssigned")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsAssigned")
+                    .HasColumnType("bit");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("Width")
-                        .HasColumnType("int");
+                b.Property<int?>("Width")
+                    .HasColumnType("int");
 
-                    b.HasKey("DataID");
+                b.HasKey("DataID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("DataItems");
-                });
+                b.ToTable("DataItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
-                {
-                    b.Property<Guid>("DisputeID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("DisputeID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("ManagerComment")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("ManagerComment")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("ResolvedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("DisputeID");
+                b.HasKey("DisputeID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("Disputes");
-                });
+                b.ToTable("Disputes");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
-                {
-                    b.Property<Guid>("ExportID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("ExportID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Format")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Format")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ItemCount")
-                        .HasColumnType("int");
+                b.Property<int>("ItemCount")
+                    .HasColumnType("int");
 
-                    b.Property<Guid>("ManagerID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ManagerID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("ExportID");
+                b.HasKey("ExportID");
 
-                    b.HasIndex("ManagerID");
+                b.HasIndex("ManagerID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("ExportHistories");
-                });
+                b.ToTable("ExportHistories");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Label", b =>
-                {
-                    b.Property<int>("LabelID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("LabelID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LabelID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LabelID"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Category")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DefaultColor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("DefaultColor")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LabelName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("LabelName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("LabelID");
+                b.HasKey("LabelID");
 
-                    b.ToTable("Labels");
-                });
+                b.ToTable("Labels");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.Property<Guid>("ProjectID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("ProjectID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("Deadline")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("Deadline")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("GuidelineUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("GuidelineUrl")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ManagerID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ManagerID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ProjectName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("ProjectName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ProjectType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("ProjectType")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Topic")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Topic")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("ProjectID");
+                b.HasKey("ProjectID");
 
-                    b.HasIndex("ManagerID");
+                b.HasIndex("ManagerID");
 
-                    b.ToTable("Projects");
-                });
+                b.ToTable("Projects");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ProjectLabel", b =>
-                {
-                    b.Property<int>("ProjectLabelID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("ProjectLabelID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectLabelID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectLabelID"));
 
-                    b.Property<string>("CustomName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("CustomName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("LabelID")
-                        .HasColumnType("int");
+                b.Property<int>("LabelID")
+                    .HasColumnType("int");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("ProjectLabelID");
+                b.HasKey("ProjectLabelID");
 
-                    b.HasIndex("LabelID");
+                b.HasIndex("LabelID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("ProjectLabels");
-                });
+                b.ToTable("ProjectLabels");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
-                {
-                    b.Property<int>("ReputationLogID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("ReputationLogID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReputationLogID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReputationLogID"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("NewScore")
-                        .HasColumnType("int");
+                b.Property<int>("NewScore")
+                    .HasColumnType("int");
 
-                    b.Property<int>("OldScore")
-                        .HasColumnType("int");
+                b.Property<int>("OldScore")
+                    .HasColumnType("int");
 
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("RuleID")
-                        .HasColumnType("int");
+                b.Property<int?>("RuleID")
+                    .HasColumnType("int");
 
-                    b.Property<int>("ScoreChange")
-                        .HasColumnType("int");
+                b.Property<int>("ScoreChange")
+                    .HasColumnType("int");
 
-                    b.Property<Guid?>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("TaskID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("ReputationLogID");
+                b.HasKey("ReputationLogID");
 
-                    b.HasIndex("RuleID");
+                b.HasIndex("RuleID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("ReputationLogs");
-                });
+                b.ToTable("ReputationLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationRule", b =>
-                {
-                    b.Property<int>("RuleID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("RuleID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RuleID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RuleID"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Category")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsActive")
+                    .HasColumnType("bit");
 
-                    b.Property<string>("RuleName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("RuleName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("UpdatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("Value")
-                        .HasColumnType("int");
+                b.Property<int>("Value")
+                    .HasColumnType("int");
 
-                    b.HasKey("RuleID");
+                b.HasKey("RuleID");
 
-                    b.ToTable("ReputationRules");
+                b.ToTable("ReputationRules");
 
-                    b.HasData(
-                        new
-                        {
-                            RuleID = 1,
-                            Category = "Reward",
-                            Description = "Hoàn thành ngay lần đầu (0 reject)",
-                            IsActive = true,
-                            RuleName = "Reward_Perfect",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(672),
-                            Value = 20
-                        },
-                        new
-                        {
-                            RuleID = 2,
-                            Category = "Bonus",
-                            Description = "Thưởng thêm nếu RateComplete > 95%",
-                            IsActive = true,
-                            RuleName = "Bonus_HighRate",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(685),
-                            Value = 2
-                        },
-                        new
-                        {
-                            RuleID = 3,
-                            Category = "Penalty",
-                            Description = "Trừ điểm khi Approve ở lần sửa 2",
-                            IsActive = true,
-                            RuleName = "Penalty_Reject_2",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(686),
-                            Value = -5
-                        },
-                        new
-                        {
-                            RuleID = 4,
-                            Category = "Penalty",
-                            Description = "Trừ điểm khi Approve ở lần sửa 3",
-                            IsActive = true,
-                            RuleName = "Penalty_Reject_3",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(687),
-                            Value = -10
-                        },
-                        new
-                        {
-                            RuleID = 5,
-                            Category = "Penalty",
-                            Description = "Task bị Fail (Reject lần 4)",
-                            IsActive = true,
-                            RuleName = "Penalty_Task_Fail",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(688),
-                            Value = -20
-                        },
-                        new
-                        {
-                            RuleID = 6,
-                            Category = "Threshold",
-                            Description = "Ngưỡng >= 50đ",
-                            IsActive = true,
-                            RuleName = "High_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(690),
-                            Value = 50
-                        },
-                        new
-                        {
-                            RuleID = 7,
-                            Category = "Threshold",
-                            Description = "Ngưỡng 20 - 50đ",
-                            IsActive = true,
-                            RuleName = "Low_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(691),
-                            Value = 20
-                        },
-                        new
-                        {
-                            RuleID = 8,
-                            Category = "Limit",
-                            Description = "Max 3 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_High",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(692),
-                            Value = 3
-                        },
-                        new
-                        {
-                            RuleID = 9,
-                            Category = "Limit",
-                            Description = "Max 2 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_Normal",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(693),
-                            Value = 2
-                        },
-                        new
-                        {
-                            RuleID = 10,
-                            Category = "Limit",
-                            Description = "Max 1 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_Warning",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(694),
-                            Value = 1
-                        },
-                        new
-                        {
-                            RuleID = 11,
-                            Category = "Limit",
-                            Description = "Số task Fail liên tiếp để bị khóa tài khoản",
-                            IsActive = true,
-                            RuleName = "Max_Consecutive_Fails",
-                            UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(695),
-                            Value = 3
-                        });
-                });
+                b.HasData(
+                    new
+                    {
+                        RuleID = 1,
+                        Category = "Reward",
+                        Description = "Hoàn thành ngay lần đầu (0 reject)",
+                        IsActive = true,
+                        RuleName = "Reward_Perfect",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(672),
+                        Value = 20
+                    },
+                    new
+                    {
+                        RuleID = 2,
+                        Category = "Bonus",
+                        Description = "Thưởng thêm nếu RateComplete > 95%",
+                        IsActive = true,
+                        RuleName = "Bonus_HighRate",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(685),
+                        Value = 2
+                    },
+                    new
+                    {
+                        RuleID = 3,
+                        Category = "Penalty",
+                        Description = "Trừ điểm khi Approve ở lần sửa 2",
+                        IsActive = true,
+                        RuleName = "Penalty_Reject_2",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(686),
+                        Value = -5
+                    },
+                    new
+                    {
+                        RuleID = 4,
+                        Category = "Penalty",
+                        Description = "Trừ điểm khi Approve ở lần sửa 3",
+                        IsActive = true,
+                        RuleName = "Penalty_Reject_3",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(687),
+                        Value = -10
+                    },
+                    new
+                    {
+                        RuleID = 5,
+                        Category = "Penalty",
+                        Description = "Task bị Fail (Reject lần 4)",
+                        IsActive = true,
+                        RuleName = "Penalty_Task_Fail",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(688),
+                        Value = -20
+                    },
+                    new
+                    {
+                        RuleID = 6,
+                        Category = "Threshold",
+                        Description = "Ngưỡng >= 50đ",
+                        IsActive = true,
+                        RuleName = "High_Threshold",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(690),
+                        Value = 50
+                    },
+                    new
+                    {
+                        RuleID = 7,
+                        Category = "Threshold",
+                        Description = "Ngưỡng 20 - 50đ",
+                        IsActive = true,
+                        RuleName = "Low_Threshold",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(691),
+                        Value = 20
+                    },
+                    new
+                    {
+                        RuleID = 8,
+                        Category = "Limit",
+                        Description = "Max 3 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_High",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(692),
+                        Value = 3
+                    },
+                    new
+                    {
+                        RuleID = 9,
+                        Category = "Limit",
+                        Description = "Max 2 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_Normal",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(693),
+                        Value = 2
+                    },
+                    new
+                    {
+                        RuleID = 10,
+                        Category = "Limit",
+                        Description = "Max 1 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_Warning",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(694),
+                        Value = 1
+                    },
+                    new
+                    {
+                        RuleID = 11,
+                        Category = "Limit",
+                        Description = "Số task Fail liên tiếp để bị khóa tài khoản",
+                        IsActive = true,
+                        RuleName = "Max_Consecutive_Fails",
+                        UpdatedAt = new DateTime(2026, 3, 17, 14, 4, 46, 837, DateTimeKind.Local).AddTicks(695),
+                        Value = 3
+                    });
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
-                {
-                    b.Property<int>("CommentID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("CommentID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommentID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommentID"));
 
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Comment")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("ErrorRegion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("ErrorRegion")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("HistoryID")
-                        .HasColumnType("int");
+                b.Property<int>("HistoryID")
+                    .HasColumnType("int");
 
-                    b.HasKey("CommentID");
+                b.HasKey("CommentID");
 
-                    b.HasIndex("HistoryID");
+                b.HasIndex("HistoryID");
 
-                    b.ToTable("ReviewComments");
-                });
+                b.ToTable("ReviewComments");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewHistory", b =>
-                {
-                    b.Property<int>("HistoryID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("HistoryID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryID"));
 
-                    b.Property<string>("Field")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Field")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FinalResult")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FinalResult")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("ReviewAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("ReviewAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ReviewerID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ReviewerID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("HistoryID");
+                b.HasKey("HistoryID");
 
-                    b.HasIndex("ReviewerID");
+                b.HasIndex("ReviewerID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.ToTable("ReviewHistories");
-                });
+                b.ToTable("ReviewHistories");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<double>("AvgReviewHours")
-                        .HasColumnType("float");
+                b.Property<double>("AvgReviewHours")
+                    .HasColumnType("float");
 
-                    b.Property<int>("CurrentPerfectStreak")
-                        .HasColumnType("int");
+                b.Property<int>("CurrentPerfectStreak")
+                    .HasColumnType("int");
 
-                    b.Property<int>("DisputedTasks")
-                        .HasColumnType("int");
+                b.Property<int>("DisputedTasks")
+                    .HasColumnType("int");
 
-                    b.Property<int>("FirstTryApprovedTasks")
-                        .HasColumnType("int");
+                b.Property<int>("FirstTryApprovedTasks")
+                    .HasColumnType("int");
 
-                    b.Property<double>("TotalReviewHours")
-                        .HasColumnType("float");
+                b.Property<double>("TotalReviewHours")
+                    .HasColumnType("float");
 
-                    b.Property<int>("TotalReviewedTasks")
-                        .HasColumnType("int");
+                b.Property<int>("TotalReviewedTasks")
+                    .HasColumnType("int");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.ToTable("ReviewerStats");
-                });
+                b.ToTable("ReviewerStats");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
-                {
-                    b.Property<int>("ConfigID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("ConfigID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConfigID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConfigID"));
 
-                    b.Property<Guid>("AdminID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("AdminID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AllowedFileTypes")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("AllowedFileTypes")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MaxProjectStorageMB")
-                        .HasColumnType("int");
+                b.Property<int>("MaxProjectStorageMB")
+                    .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("UpdatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Value")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("ConfigID");
+                b.HasKey("ConfigID");
 
-                    b.HasIndex("AdminID");
+                b.HasIndex("AdminID");
 
-                    b.ToTable("SystemConfigs");
-                });
+                b.ToTable("SystemConfigs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemLog", b =>
-                {
-                    b.Property<int>("LogID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("LogID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogID"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogID"));
 
-                    b.Property<string>("ActionType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("ActionType")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("EntityType")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TargetID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("TargetID")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("LogID");
+                b.HasKey("LogID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("SystemLogs");
-                });
+                b.ToTable("SystemLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.Property<Guid>("TaskID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("TaskID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AnnotatorID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("AnnotatorID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime?>("CompletedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
 
-                    b.Property<int>("CurrentRound")
-                        .HasColumnType("int");
+                b.Property<int>("CurrentRound")
+                    .HasColumnType("int");
 
-                    b.Property<DateTime>("Deadline")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("Deadline")
+                    .HasColumnType("datetime2");
 
-                    b.Property<double?>("FirstRate")
-                        .HasColumnType("float");
+                b.Property<double?>("FirstRate")
+                    .HasColumnType("float");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<double>("RateComplete")
-                        .HasColumnType("float");
+                b.Property<double>("RateComplete")
+                    .HasColumnType("float");
 
-                    b.Property<Guid?>("ReviewerID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("ReviewerID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                b.Property<int>("Status")
+                    .HasColumnType("int");
 
-                    b.Property<double>("SubmissionRate")
-                        .HasColumnType("float");
+                b.Property<double>("SubmissionRate")
+                    .HasColumnType("float");
 
-                    b.Property<string>("TaskName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("TaskName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("TaskID");
+                b.HasKey("TaskID");
 
-                    b.HasIndex("AnnotatorID");
+                b.HasIndex("AnnotatorID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.HasIndex("ReviewerID");
+                b.HasIndex("ReviewerID");
 
-                    b.ToTable("Tasks");
-                });
+                b.ToTable("Tasks");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.Property<Guid>("ItemID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("ItemID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("DataID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("DataID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsFlagged")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsFlagged")
+                    .HasColumnType("bit");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("ItemID");
+                b.HasKey("ItemID");
 
-                    b.HasIndex("DataID");
+                b.HasIndex("DataID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.ToTable("TaskItems");
-                });
+                b.ToTable("TaskItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
-                {
-                    b.Property<int>("IDDetail")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("IDDetail")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDDetail"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDDetail"));
 
-                    b.Property<string>("AnnotationData")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("AnnotationData")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Content")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Field")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Field")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsApproved")
+                    .HasColumnType("bit");
 
-                    b.Property<Guid>("TaskItemID")
-                        .HasColumnType("uniqueidentifier");
+                b.Property<Guid>("TaskItemID")
+                    .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("IDDetail");
+                b.HasKey("IDDetail");
 
-                    b.HasIndex("TaskItemID");
+                b.HasIndex("TaskItemID");
 
-                    b.ToTable("TaskItemDetails");
-                });
+                b.ToTable("TaskItemDetails");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("UserID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CurrentTaskCount")
-                        .HasColumnType("int");
+                b.Property<int>("CurrentTaskCount")
+                    .HasColumnType("int");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Email")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Expertise")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Expertise")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("FullName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("GoogleAccountId")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("GoogleAccountId")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                b.Property<bool>("IsActive")
+                    .HasColumnType("bit");
 
-                    b.Property<string>("Password")
-                        .HasColumnType("nvarchar(max)");
+                b.Property<string>("Password")
+                    .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                b.Property<int>("Role")
+                    .HasColumnType("int");
 
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
+                b.Property<int>("Score")
+                    .HasColumnType("int");
 
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                b.Property<string>("UserName")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.HasIndex("UserName")
-                        .IsUnique();
+                b.HasIndex("UserName")
+                    .IsUnique();
 
-                    b.ToTable("Users");
-                });
+                b.ToTable("Users");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Performer")
-                        .WithMany()
-                        .HasForeignKey("PerformedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.User", "Performer")
+                    .WithMany()
+                    .HasForeignKey("PerformedBy")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.User", "TargetUser")
-                        .WithMany()
-                        .HasForeignKey("TargetUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.User", "TargetUser")
+                    .WithMany()
+                    .HasForeignKey("TargetUserId")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Performer");
+                b.Navigation("Performer");
 
-                    b.Navigation("TargetUser");
-                });
+                b.Navigation("TargetUser");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("AnnotatorStat")
-                        .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithOne("AnnotatorStat")
+                    .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("DataItems")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("DataItems")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Task");
+                b.Navigation("Task");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Manager")
-                        .WithMany()
-                        .HasForeignKey("ManagerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Manager")
+                    .WithMany()
+                    .HasForeignKey("ManagerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany()
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Manager");
+                b.Navigation("Manager");
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Manager")
-                        .WithMany("ManagedProjects")
-                        .HasForeignKey("ManagerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Manager")
+                    .WithMany("ManagedProjects")
+                    .HasForeignKey("ManagerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Manager");
-                });
+                b.Navigation("Manager");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ProjectLabel", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Label", "Label")
-                        .WithMany()
-                        .HasForeignKey("LabelID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Label", "Label")
+                    .WithMany()
+                    .HasForeignKey("LabelID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("ProjectLabels")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("ProjectLabels")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Label");
+                b.Navigation("Label");
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
-                        .WithMany()
-                        .HasForeignKey("RuleID")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
+                    .WithMany()
+                    .HasForeignKey("RuleID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany("ReputationLogs")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany("ReputationLogs")
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("AppliedRule");
+                b.Navigation("AppliedRule");
 
-                    b.Navigation("Task");
+                b.Navigation("Task");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
-                {
-                    b.HasOne("SWP_BE.Models.ReviewHistory", "ReviewHistory")
-                        .WithMany()
-                        .HasForeignKey("HistoryID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.ReviewHistory", "ReviewHistory")
+                    .WithMany()
+                    .HasForeignKey("HistoryID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("ReviewHistory");
-                });
+                b.Navigation("ReviewHistory");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewHistory", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Reviewer")
-                        .WithMany()
-                        .HasForeignKey("ReviewerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Reviewer")
+                    .WithMany()
+                    .HasForeignKey("ReviewerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Reviewer");
+                b.Navigation("Reviewer");
 
-                    b.Navigation("Task");
-                });
+                b.Navigation("Task");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("ReviewerStat")
-                        .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithOne("ReviewerStat")
+                    .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AdminID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Admin")
+                    .WithMany()
+                    .HasForeignKey("AdminID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Admin");
-                });
+                b.Navigation("Admin");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Annotator")
-                        .WithMany("AnnotatorTasks")
-                        .HasForeignKey("AnnotatorID")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.User", "Annotator")
+                    .WithMany("AnnotatorTasks")
+                    .HasForeignKey("AnnotatorID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("Tasks")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("Tasks")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.User", "Reviewer")
-                        .WithMany("ReviewerTasks")
-                        .HasForeignKey("ReviewerID")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.User", "Reviewer")
+                    .WithMany("ReviewerTasks")
+                    .HasForeignKey("ReviewerID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Annotator");
+                b.Navigation("Annotator");
 
-                    b.Navigation("Project");
+                b.Navigation("Project");
 
-                    b.Navigation("Reviewer");
-                });
+                b.Navigation("Reviewer");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.HasOne("SWP_BE.Models.DataItem", "DataItem")
-                        .WithMany()
-                        .HasForeignKey("DataID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.DataItem", "DataItem")
+                    .WithMany()
+                    .HasForeignKey("DataID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany("TaskItems")
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany("TaskItems")
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("DataItem");
+                b.Navigation("DataItem");
 
-                    b.Navigation("Task");
-                });
+                b.Navigation("Task");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
-                {
-                    b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
-                        .WithMany("TaskItemDetails")
-                        .HasForeignKey("TaskItemID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
+                    .WithMany("TaskItemDetails")
+                    .HasForeignKey("TaskItemID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("TaskItem");
-                });
+                b.Navigation("TaskItem");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.Navigation("DataItems");
+            {
+                b.Navigation("DataItems");
 
-                    b.Navigation("ProjectLabels");
+                b.Navigation("ProjectLabels");
 
-                    b.Navigation("Tasks");
-                });
+                b.Navigation("Tasks");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.Navigation("TaskItems");
-                });
+            {
+                b.Navigation("TaskItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.Navigation("TaskItemDetails");
-                });
+            {
+                b.Navigation("TaskItemDetails");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
-                {
-                    b.Navigation("AnnotatorStat");
+            {
+                b.Navigation("AnnotatorStat");
 
-                    b.Navigation("AnnotatorTasks");
+                b.Navigation("AnnotatorTasks");
 
-                    b.Navigation("ManagedProjects");
+                b.Navigation("ManagedProjects");
 
-                    b.Navigation("ReputationLogs");
+                b.Navigation("ReputationLogs");
 
-                    b.Navigation("ReviewerStat");
+                b.Navigation("ReviewerStat");
 
-                    b.Navigation("ReviewerTasks");
-                });
+                b.Navigation("ReviewerTasks");
+            });
 #pragma warning restore 612, 618
         }
     }

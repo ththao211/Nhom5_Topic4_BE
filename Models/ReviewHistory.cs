@@ -12,7 +12,7 @@ namespace SWP_BE.Models
         public string Field { get; set; } = string.Empty;
         public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
-        public Task? Task { get; set; }
+        public SWP_BE.Models.Task? Task { get; set; }
         public Guid ReviewerID { get; set; }
         [ForeignKey("ReviewerID")]
         public User? Reviewer { get; set; }

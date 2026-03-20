@@ -208,7 +208,6 @@ namespace SWP_BE.Controllers
                     project.ProjectID,
                     project.ProjectName,
                     project.Description,
-                    project.Topic,
                     Status = project.Status.ToString(),
                     project.ProjectType,
                     project.Deadline,

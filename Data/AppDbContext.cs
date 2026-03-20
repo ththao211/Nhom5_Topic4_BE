@@ -69,7 +69,17 @@ namespace SWP_BE.Data
                 new ReputationRule { RuleID = 8, RuleName = "Max_Task_High", Value = 3, Category = "Limit", Description = "Max 3 task" },
                 new ReputationRule { RuleID = 9, RuleName = "Max_Task_Normal", Value = 2, Category = "Limit", Description = "Max 2 task" },
                 new ReputationRule { RuleID = 10, RuleName = "Max_Task_Warning", Value = 1, Category = "Limit", Description = "Max 1 task" },
-                new ReputationRule { RuleID = 11, RuleName = "Max_Consecutive_Fails", Value = 3, Category = "Limit", Description = "Số task Fail liên tiếp để bị khóa tài khoản" }
+                new ReputationRule { RuleID = 11, RuleName = "Max_Consecutive_Fails", Value = 3, Category = "Limit", Description = "Số task Fail liên tiếp để Annotator bị khóa tài khoản" },
+                // --- Nhóm xử lý Khiếu nại (Dispute) MỚI THÊM VÀO ĐÂY ---
+                new ReputationRule { RuleID = 16, RuleName = "Max_Wrong_Disputed_Tasks_Streak", Value = 3, Category = "Limit", Description = "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản" },
+
+                new ReputationRule { RuleID = 12, RuleName = "Penalty_Annotator_Rejected_Dispute", Value = -5, Category = "Penalty", Description = "Annotator khiếu nại sai (Dispute Rejected)" },
+
+                // --- RULE MỚI CHO REVIEWER (Chuỗi phong độ) ---
+                new ReputationRule { RuleID = 13, RuleName = "Max_Disputed_Tasks_Streak", Value = 3, Category = "Limit", Description = "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản" },
+                new ReputationRule { RuleID = 14, RuleName = "Penalty_Reviewer_False_Check", Value = -10, Category = "Penalty", Description = "Reviewer bắt lỗi sai (Dispute lost)" },
+                new ReputationRule { RuleID = 15, RuleName = "Reward_Reviewer_Perfect_Reject_Streak", Value = 10, Category = "Reward", Description = "Thưởng Reviewer reject 5 task liên tiếp không sai" }
+                
             );
             // Cấu hình quan hệ 1-1 cho AnnotatorStat
             modelBuilder.Entity<User>()
