@@ -29,6 +29,7 @@ namespace SWP_BE.Repositories
                     d.DisputeID,
                     TaskName = d.Task.TaskName,
                     ProjectName = d.Task.Project.ProjectName,
+                    ManagerComment = d.ManagerComment,
 
                     EvidenceImages = _context.ReviewComments
                         .Where(rc => rc.ReviewHistory.TaskID == d.TaskID
