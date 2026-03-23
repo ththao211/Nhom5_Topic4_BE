@@ -21,73 +21,7 @@ namespace SWP_BE.Services
         {
             _context = context;
         }
-
-        public async Task ExportYoloAsync(Guid projectId, string outputFolder)
-        {
-            var tasks = await _context.Tasks
-                .Include(t => t.TaskItems)
-                    .ThenInclude(i => i.TaskItemDetails)
-                .Include(t => t.TaskItems)
-                    .ThenInclude(i => i.DataItem)
-                .Include(t => t.Project)
-                    .ThenInclude(p => p.ProjectLabels)
-                .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
-                .ToListAsync();
-
-            if (!tasks.Any())
-                throw new Exception("Không có task Approved");
-
-            Directory.CreateDirectory(outputFolder);
-
-            var labelMap = tasks.First().Project.ProjectLabels
-                .Select((pl, index) => new { pl.LabelID, index })
-                .ToDictionary(x => x.LabelID, x => x.index);
-
-            foreach (var task in tasks)
-            {
-                foreach (var item in task.TaskItems)
-                {
-                    var lines = new List<string>();
-
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
-                    {
-                        try
-                        {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
-
-                            if (data == null) continue;
-
-                            int labelId = Convert.ToInt32(data["labelId"]);
-                            double x = Convert.ToDouble(data["x"]);
-                            double y = Convert.ToDouble(data["y"]);
-                            double w = Convert.ToDouble(data["w"]);
-                            double h = Convert.ToDouble(data["h"]);
-
-                            if (!labelMap.ContainsKey(labelId)) continue;
-
-                            // validate YOLO range
-                            if (x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || h <= 0)
-                                continue;
-
-                            lines.Add($"{labelMap[labelId]} {x} {y} {w} {h}");
-                        }
-                        catch
-                        {
-                            continue; // bỏ annotation lỗi
-                        }
-                    }
-
-                    if (!lines.Any()) continue;
-
-                    var fileName = $"{item.ItemID}.txt";
-                    var path = Path.Combine(outputFolder, fileName);
-
-                    await File.WriteAllLinesAsync(path, lines);
-                }
-            }
-        }
-
-        public async Task ExportCocoAsync(Guid projectId, string outputFile)
+        public async Task<(byte[] fileBytes, string fileName)> ExportYoloZipAsync(Guid projectId)
         {
             var tasks = await _context.Tasks
                 .Include(t => t.TaskItems)
@@ -97,80 +31,93 @@ namespace SWP_BE.Services
                 .Include(t => t.Project)
                     .ThenInclude(p => p.ProjectLabels)
                         .ThenInclude(pl => pl.Label)
-                .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
+                .Where(t => t.ProjectID == projectId &&
+                            t.Status == Models.Task.TaskStatus.Approved)
                 .ToListAsync();
 
             if (!tasks.Any())
                 throw new Exception("Không có task Approved");
 
+            ValidateData(tasks);
+
+            // ===== TEMP FOLDER =====
+            var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+            var imageFolder = Path.Combine(tempFolder, "images");
+            var labelFolder = Path.Combine(tempFolder, "labels");
+
+            Directory.CreateDirectory(tempFolder);
+            Directory.CreateDirectory(imageFolder);
+            Directory.CreateDirectory(labelFolder);
+
             var project = tasks.First().Project;
 
-            var categories = project.ProjectLabels
-                .Select((pl, index) => new
-                {
-                    id = index,
-                    name = pl.CustomName ?? pl.Label.LabelName
-                }).ToList();
-
-            // map labelId -> categoryId
+            // ===== LABEL MAP =====
             var labelMap = project.ProjectLabels
-                .Select((pl, index) => new { pl.LabelID, index })
-                .ToDictionary(x => x.LabelID, x => x.index);
+             .GroupBy(pl => pl.LabelID)
+              .Select((g, index) => new { LabelID = g.Key, index })
+              .ToDictionary(x => x.LabelID, x => x.index);
 
-            int imageId = 1;
-            int annotationId = 1;
+            // ===== classes.txt =====
+            var classNames = project.ProjectLabels
+                .Select(pl => pl.CustomName ?? pl.Label.LabelName);
 
-            var images = new List<object>();
-            var annotations = new List<object>();
+            await File.WriteAllLinesAsync(
+                Path.Combine(tempFolder, "classes.txt"),
+                classNames
+            );
 
+            // ===== EXPORT DATASET =====
             foreach (var task in tasks)
             {
                 foreach (var item in task.TaskItems)
                 {
-                    if (item.DataItem == null) continue;
+                    if (item.DataItem == null)
+                        continue;
 
-                    images.Add(new
-                    {
-                        id = imageId,
-                        file_name = item.DataItem.FileName,
-                        width = item.DataItem.Width,
-                        height = item.DataItem.Height
-                    });
+                    var imagePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    item.DataItem.FilePath
+);
 
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
+                    if (!File.Exists(imagePath))
+                        continue;
+
+                    // ===== COPY IMAGE =====
+                    var destImagePath = Path.Combine(
+                        imageFolder,
+                        item.DataItem.FileName
+                    );
+
+                    File.Copy(imagePath, destImagePath, true);
+
+                    var lines = new List<string>();
+
+                    foreach (var detail in item.TaskItemDetails
+                                 .Where(d => d.IsApproved))
                     {
                         try
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
+                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                                detail.AnnotationData
+                            );
 
-                            if (data == null) continue;
+                            if (data == null)
+                                continue;
 
                             int labelId = Convert.ToInt32(data["labelId"]);
 
-                            if (!labelMap.ContainsKey(labelId)) continue;
+                            if (!labelMap.ContainsKey(labelId))
+                                continue;
 
                             double x = Convert.ToDouble(data["x"]);
                             double y = Convert.ToDouble(data["y"]);
                             double w = Convert.ToDouble(data["w"]);
                             double h = Convert.ToDouble(data["h"]);
 
-                            var width = item.DataItem.Width ?? 1;
-                            var height = item.DataItem.Height ?? 1;
-
-                            var cocoX = (x - w / 2) * width;
-                            var cocoY = (y - h / 2) * height;
-                            var cocoW = w * width;
-                            var cocoH = h * height;
-
-                            annotations.Add(new
-                            {
-                                id = annotationId++,
-                                image_id = imageId,
-                                category_id = labelMap[labelId],
-                                bbox = new[] { cocoX, cocoY, cocoW, cocoH },
-                                area = cocoW * cocoH,
-                                iscrowd = 0
-                            });
+                            lines.Add(
+                                $"{labelMap[labelId]} {x} {y} {w} {h}"
+                            );
                         }
                         catch
                         {
@@ -178,104 +125,32 @@ namespace SWP_BE.Services
                         }
                     }
 
-                    imageId++;
+                    if (!lines.Any())
+                        continue;
+
+                    // ===== LABEL FILE =====
+                    var labelName =
+                        Path.GetFileNameWithoutExtension(item.DataItem.FileName)
+                        + ".txt";
+
+                    var labelPath = Path.Combine(labelFolder, labelName);
+
+                    await File.WriteAllLinesAsync(labelPath, lines);
                 }
             }
 
-            var coco = new
-            {
-                images,
-                annotations,
-                categories
-            };
+            // ===== CREATE ZIP =====
+            var zipPath = Path.Combine(
+                Path.GetTempPath(),
+                $"{Guid.NewGuid()}.zip"
+            );
 
-            var json = JsonSerializer.Serialize(coco, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            ZipFile.CreateFromDirectory(tempFolder, zipPath);
 
-            await File.WriteAllTextAsync(outputFile, json);
+            var bytes = await File.ReadAllBytesAsync(zipPath);
+
+            return (bytes, "yolo_dataset.zip");
         }
-
- 
-
-public async Task<(byte[] fileBytes, string fileName)> ExportYoloZipAsync(Guid projectId)
-    {
-        var tasks = await _context.Tasks
-            .Include(t => t.TaskItems)
-                .ThenInclude(i => i.TaskItemDetails)
-            .Include(t => t.TaskItems)
-                .ThenInclude(i => i.DataItem)
-            .Include(t => t.Project)
-                .ThenInclude(p => p.ProjectLabels)
-                    .ThenInclude(pl => pl.Label)
-            .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
-            .ToListAsync();
-
-        if (!tasks.Any())
-            throw new Exception("Không có task Approved");
-
-        // ===== VALIDATE =====
-        ValidateData(tasks);
-
-        var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempFolder);
-
-        var project = tasks.First().Project;
-
-        var labelMap = project.ProjectLabels
-            .Select((pl, index) => new { pl.LabelID, index })
-            .ToDictionary(x => x.LabelID, x => x.index);
-
-        // ===== classes.txt =====
-        var classNames = project.ProjectLabels
-            .Select(pl => pl.CustomName ?? pl.Label.LabelName);
-
-        await File.WriteAllLinesAsync(Path.Combine(tempFolder, "classes.txt"), classNames);
-
-        // ===== label files =====
-        foreach (var task in tasks)
-        {
-            foreach (var item in task.TaskItems)
-            {
-                var lines = new List<string>();
-
-                foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
-                {
-                    try
-                    {
-                        var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
-                        if (data == null) continue;
-
-                        int labelId = Convert.ToInt32(data["labelId"]);
-
-                        if (!labelMap.ContainsKey(labelId)) continue;
-
-                        double x = Convert.ToDouble(data["x"]);
-                        double y = Convert.ToDouble(data["y"]);
-                        double w = Convert.ToDouble(data["w"]);
-                        double h = Convert.ToDouble(data["h"]);
-
-                        lines.Add($"{labelMap[labelId]} {x} {y} {w} {h}");
-                    }
-                    catch { }
-                }
-
-                if (!lines.Any()) continue;
-
-                var filePath = Path.Combine(tempFolder, $"{item.ItemID}.txt");
-                await File.WriteAllLinesAsync(filePath, lines);
-            }
-        }
-
-        // ===== ZIP =====
-        var zipPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
-        ZipFile.CreateFromDirectory(tempFolder, zipPath);
-
-        var bytes = await File.ReadAllBytesAsync(zipPath);
-
-        return (bytes, "yolo_export.zip");
-    }
 
         public async Task<(byte[] fileBytes, string fileName)> ExportCocoFileAsync(Guid projectId)
         {
@@ -392,7 +267,7 @@ public async Task<(byte[] fileBytes, string fileName)> ExportYoloZipAsync(Guid p
                         throw new Exception($"Item {item.ItemID} chưa có annotation");
 
                     if (item.DataItem.Width == null || item.DataItem.Height == null)
-                        throw new Exception($"Ảnh thiếu width/height: {item.DataItem.FileName}");
+                        continue;
                 }
             }
         }
