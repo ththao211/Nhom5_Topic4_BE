@@ -1,18 +1,16 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using System.IO.Compression;
-using System.Text;
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 namespace SWP_BE.Services
 {
-   
-
     public class ExportService
     {
         private readonly AppDbContext _context;
@@ -21,6 +19,10 @@ namespace SWP_BE.Services
         {
             _context = context;
         }
+
+        // ==========================================
+        // EXPORT YOLO (ZIP)
+        // ==========================================
         public async Task<(byte[] fileBytes, string fileName)> ExportYoloZipAsync(Guid projectId)
         {
             var tasks = await _context.Tasks
@@ -31,8 +33,7 @@ namespace SWP_BE.Services
                 .Include(t => t.Project)
                     .ThenInclude(p => p.ProjectLabels)
                         .ThenInclude(pl => pl.Label)
-                .Where(t => t.ProjectID == projectId &&
-                            t.Status == Models.Task.TaskStatus.Approved)
+                .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
                 .ToListAsync();
 
             if (!tasks.Any())
@@ -40,9 +41,16 @@ namespace SWP_BE.Services
 
             ValidateData(tasks);
 
+            var project = tasks.First().Project;
+
+            // ===== LABEL MAP =====
+            var labelMap = project.ProjectLabels
+                .GroupBy(pl => pl.LabelID)
+                .Select((g, index) => new { LabelID = g.Key, index })
+                .ToDictionary(x => x.LabelID, x => x.index);
+
             // ===== TEMP FOLDER =====
             var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-
             var imageFolder = Path.Combine(tempFolder, "images");
             var labelFolder = Path.Combine(tempFolder, "labels");
 
@@ -50,108 +58,83 @@ namespace SWP_BE.Services
             Directory.CreateDirectory(imageFolder);
             Directory.CreateDirectory(labelFolder);
 
-            var project = tasks.First().Project;
-
-            // ===== LABEL MAP =====
-            var labelMap = project.ProjectLabels
-             .GroupBy(pl => pl.LabelID)
-              .Select((g, index) => new { LabelID = g.Key, index })
-              .ToDictionary(x => x.LabelID, x => x.index);
-
             // ===== classes.txt =====
-            var classNames = project.ProjectLabels
-                .Select(pl => pl.CustomName ?? pl.Label.LabelName);
+            var classNames = project.ProjectLabels.Select(pl => pl.CustomName ?? pl.Label.LabelName);
+            await File.WriteAllLinesAsync(Path.Combine(tempFolder, "classes.txt"), classNames);
 
-            await File.WriteAllLinesAsync(
-                Path.Combine(tempFolder, "classes.txt"),
-                classNames
-            );
-
-            // ===== EXPORT DATASET =====
             foreach (var task in tasks)
             {
                 foreach (var item in task.TaskItems)
                 {
-                    if (item.DataItem == null)
-                        continue;
+                    if (item.DataItem == null) continue;
 
-                    var imagePath = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    item.DataItem.FilePath
-);
+                    // Copy Image
+                    var imagePath = Path.Combine(Directory.GetCurrentDirectory(), item.DataItem.FilePath);
+                    if (File.Exists(imagePath))
+                    {
+                        var destImagePath = Path.Combine(imageFolder, item.DataItem.FileName);
+                        File.Copy(imagePath, destImagePath, true);
+                    }
 
-                    if (!File.Exists(imagePath))
-                        continue;
-
-                    // ===== COPY IMAGE =====
-                    var destImagePath = Path.Combine(
-                        imageFolder,
-                        item.DataItem.FileName
-                    );
-
-                    File.Copy(imagePath, destImagePath, true);
-
+                    // Generate Label Text File
                     var lines = new List<string>();
-
-                    foreach (var detail in item.TaskItemDetails
-                                 .Where(d => d.IsApproved))
+                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
                     {
                         try
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(
-                                detail.AnnotationData
-                            );
+                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
+                            if (data == null) continue;
 
-                            if (data == null)
+                            // Chuyển đổi an toàn từ JsonElement sang các kiểu dữ liệu
+                            int labelId = Convert.ToInt32(data["labelId"].ToString());
+                            if (!labelMap.ContainsKey(labelId)) continue;
+
+                            double x = Convert.ToDouble(data["x"].ToString());
+                            double y = Convert.ToDouble(data["y"].ToString());
+                            double w = Convert.ToDouble(data["w"].ToString());
+                            double h = Convert.ToDouble(data["h"].ToString());
+
+                            // Validate YOLO range
+                            if (x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || h <= 0)
                                 continue;
 
-                            int labelId = Convert.ToInt32(data["labelId"]);
-
-                            if (!labelMap.ContainsKey(labelId))
-                                continue;
-
-                            double x = Convert.ToDouble(data["x"]);
-                            double y = Convert.ToDouble(data["y"]);
-                            double w = Convert.ToDouble(data["w"]);
-                            double h = Convert.ToDouble(data["h"]);
-
-                            lines.Add(
-                                $"{labelMap[labelId]} {x} {y} {w} {h}"
-                            );
+                            lines.Add($"{labelMap[labelId]} {x} {y} {w} {h}");
                         }
                         catch
                         {
-                            continue;
+                            continue; // Bỏ qua annotation lỗi
                         }
                     }
 
-                    if (!lines.Any())
-                        continue;
-
-                    // ===== LABEL FILE =====
-                    var labelName =
-                        Path.GetFileNameWithoutExtension(item.DataItem.FileName)
-                        + ".txt";
-
-                    var labelPath = Path.Combine(labelFolder, labelName);
-
-                    await File.WriteAllLinesAsync(labelPath, lines);
+                    if (lines.Any())
+                    {
+                        var labelName = Path.GetFileNameWithoutExtension(item.DataItem.FileName) + ".txt";
+                        var labelPath = Path.Combine(labelFolder, labelName);
+                        await File.WriteAllLinesAsync(labelPath, lines);
+                    }
                 }
             }
 
-            // ===== CREATE ZIP =====
-            var zipPath = Path.Combine(
-                Path.GetTempPath(),
-                $"{Guid.NewGuid()}.zip"
-            );
-
+            // ===== ZIP =====
+            var zipPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
             ZipFile.CreateFromDirectory(tempFolder, zipPath);
 
             var bytes = await File.ReadAllBytesAsync(zipPath);
 
+            // Clean up: Xóa file tạm và thư mục tạm sau khi nén xong để không đầy bộ nhớ server
+            try
+            {
+                Directory.Delete(tempFolder, true);
+                File.Delete(zipPath);
+            }
+            catch { }
+
             return (bytes, "yolo_dataset.zip");
         }
 
+        // ==========================================
+        // EXPORT COCO (FILE BYTES)
+        // ==========================================
         public async Task<(byte[] fileBytes, string fileName)> ExportCocoFileAsync(Guid projectId)
         {
             var tasks = await _context.Tasks
@@ -210,17 +193,18 @@ namespace SWP_BE.Services
                             var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
                             if (data == null) continue;
 
-                            int labelId = Convert.ToInt32(data["labelId"]);
+                            int labelId = Convert.ToInt32(data["labelId"].ToString());
                             if (!labelMap.ContainsKey(labelId)) continue;
 
-                            double x = Convert.ToDouble(data["x"]);
-                            double y = Convert.ToDouble(data["y"]);
-                            double w = Convert.ToDouble(data["w"]);
-                            double h = Convert.ToDouble(data["h"]);
+                            double x = Convert.ToDouble(data["x"].ToString());
+                            double y = Convert.ToDouble(data["y"].ToString());
+                            double w = Convert.ToDouble(data["w"].ToString());
+                            double h = Convert.ToDouble(data["h"].ToString());
 
                             var width = item.DataItem.Width ?? 1;
                             var height = item.DataItem.Height ?? 1;
 
+                            // Chuyển đổi từ tọa độ chuẩn hóa YOLO sang dạng pixel của COCO (x_min, y_min, w_pixel, h_pixel)
                             var cocoX = (x - w / 2) * width;
                             var cocoY = (y - h / 2) * height;
                             var cocoW = w * width;
@@ -238,7 +222,6 @@ namespace SWP_BE.Services
                         }
                         catch { }
                     }
-
                     imageId++;
                 }
             }
@@ -253,7 +236,9 @@ namespace SWP_BE.Services
             return (Encoding.UTF8.GetBytes(json), "coco_export.json");
         }
 
-
+        // ==========================================
+        // VALIDATION
+        // ==========================================
         private void ValidateData(List<Models.Task> tasks)
         {
             foreach (var task in tasks)
@@ -271,7 +256,5 @@ namespace SWP_BE.Services
                 }
             }
         }
-
     }
-
 }
