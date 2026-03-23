@@ -1,23 +1,28 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
+using SWP_BE.Models;
+using System.IO.Compression;
 using System.IO.Compression;
 using System.Text;
+using System.Text;
 using System.Text.Json;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System;
+using System.Text.Json;
 
 namespace SWP_BE.Services
 {
     public class ExportService
     {
         private readonly AppDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ExportService(AppDbContext context)
+        public ExportService(
+            AppDbContext context,
+            IHttpContextAccessor httpContextAccessor
+        )
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // ==========================================
@@ -121,14 +126,23 @@ namespace SWP_BE.Services
 
             var bytes = await File.ReadAllBytesAsync(zipPath);
 
-            // Clean up: Xóa file tạm và thư mục tạm sau khi nén xong để không đầy bộ nhớ server
-            try
-            {
-                Directory.Delete(tempFolder, true);
-                File.Delete(zipPath);
-            }
-            catch { }
+            var managerId = GetManagerId();
 
+            var itemCount = tasks
+                .SelectMany(t => t.TaskItems)
+                .Count();
+
+            _context.ExportHistories.Add(new ExportHistory
+            {
+                ExportID = Guid.NewGuid(),
+                Format = "YOLO",
+                ItemCount = itemCount,
+                CreatedAt = DateTime.UtcNow,
+                ProjectID = projectId,
+                ManagerID = managerId
+            });
+
+            await _context.SaveChangesAsync();
             return (bytes, "yolo_dataset.zip");
         }
 
@@ -233,6 +247,23 @@ namespace SWP_BE.Services
                 WriteIndented = true
             });
 
+            var managerId = GetManagerId();
+
+            var itemCount = tasks
+                .SelectMany(t => t.TaskItems)
+                .Count();
+
+            _context.ExportHistories.Add(new ExportHistory
+            {
+                ExportID = Guid.NewGuid(),
+                Format = "COCO",
+                ItemCount = itemCount,
+                CreatedAt = DateTime.UtcNow,
+                ProjectID = projectId,
+                ManagerID = managerId
+            });
+
+            await _context.SaveChangesAsync();
             return (Encoding.UTF8.GetBytes(json), "coco_export.json");
         }
 
@@ -256,5 +287,16 @@ namespace SWP_BE.Services
                 }
             }
         }
+        private Guid GetManagerId()
+        {
+            var userId = _httpContextAccessor
+                .HttpContext?
+                .User?
+                .FindFirst("UserID")?
+                .Value;
+
+            return Guid.Parse(userId!);
+        }
+
     }
 }
