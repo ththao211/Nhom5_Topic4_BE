@@ -13,12 +13,14 @@ namespace SWP_BE.Repositories
         System.Threading.Tasks.Task<SWP_BE.Models.Task?> GetTaskByIdAsync(Guid taskId, Guid annotatorId);
         System.Threading.Tasks.Task<TaskItem?> GetItemByIdAsync(Guid itemId);
 
-        // THÊM MỚI: Phương thức để xóa các AnnotationDetail cũ
         void DeleteItemDetails(IEnumerable<TaskItemDetail> details);
 
         System.Threading.Tasks.Task AddDisputeAsync(Dispute dispute);
         System.Threading.Tasks.Task<User?> GetUserWithLogsAsync(Guid userId);
         System.Threading.Tasks.Task SaveChangesAsync();
+
+        // 🔥 Đổi kiểu trả về thành object để chứa thêm EvidenceImages
+        System.Threading.Tasks.Task<IEnumerable<object>> GetDisputesByUserIdAsync(Guid userId);
     }
 
     public class AnnotatorRepository : IAnnotatorRepository
@@ -52,15 +54,61 @@ namespace SWP_BE.Repositories
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.AnnotatorID == annotatorId);
         }
 
+        // ==========================================================
+        // 🔥 HÀM NÀY ĐÃ ĐƯỢC FIX ĐỂ LẤY KÈM ẢNH BẰNG CHỨNG
+        // ==========================================================
+        public async System.Threading.Tasks.Task<IEnumerable<object>> GetDisputesByUserIdAsync(Guid userId)
+        {
+            var rawData = await _context.Disputes
+                .Where(d => d.UserID == userId)
+                .OrderByDescending(d => d.CreatedAt) // Mới nhất xếp lên đầu
+                .Select(d => new
+                {
+                    DisputeID = d.DisputeID,
+                    TaskID = d.TaskID,
+                    TaskName = d.Task != null ? d.Task.TaskName : "Unknown",
+                    ProjectName = (d.Task != null && d.Task.Project != null) ? d.Task.Project.ProjectName : "Unknown",
+                    Reason = d.Reason,
+                    ManagerComment = d.ManagerComment,
+                    Status = d.Status,
+                    CreatedAt = d.CreatedAt,
+                    ResolvedAt = d.ResolvedAt,
+
+                    EvidenceString = _context.ReviewComments
+                        .Where(rc => rc.ReviewHistory.TaskID == d.TaskID && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                        .OrderByDescending(rc => rc.CreatedAt)
+                        .Select(rc => rc.EvidenceImages)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            // Ép string ảnh thành List<string> để FE parse dễ dàng
+            return rawData.Select(d => new
+            {
+                DisputeID = d.DisputeID,
+                TaskID = d.TaskID,
+                TaskName = d.TaskName,
+                ProjectName = d.ProjectName,
+                Reason = d.Reason,
+                ManagerComment = d.ManagerComment,
+                Status = d.Status,
+                CreatedAt = d.CreatedAt,
+                ResolvedAt = d.ResolvedAt,
+                EvidenceImages = string.IsNullOrEmpty(d.EvidenceString)
+                    ? new List<string>()
+                    : new List<string> { d.EvidenceString }
+            });
+        }
+
         public async System.Threading.Tasks.Task<TaskItem?> GetItemByIdAsync(Guid itemId)
         {
             return await _context.TaskItems
                 .Include(ti => ti.DataItem)
                 .Include(ti => ti.TaskItemDetails)
+                .Include(ti => ti.Task)
                 .FirstOrDefaultAsync(ti => ti.ItemID == itemId);
         }
 
-        // THỰC THI XÓA: Dùng RemoveRange để xóa hẳn khỏi DB
         public void DeleteItemDetails(IEnumerable<TaskItemDetail> details)
         {
             _context.TaskItemDetails.RemoveRange(details);

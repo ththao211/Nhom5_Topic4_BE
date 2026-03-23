@@ -3,10 +3,6 @@ using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TaskModel = SWP_BE.Models.Task;
 
 namespace SWP_BE.Services
@@ -46,6 +42,10 @@ namespace SWP_BE.Services
 
         public async Task<(bool success, string message, Guid? taskId)> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
         {
+            var project = await _context.Projects.FirstOrDefaultAsync(p => p.ProjectID == projectId);
+            if (project == null)
+                return (false, "Project không tồn tại.", null);
+
             var dataItems = await _taskRepo.GetDataItemsByIdsAsync(projectId, dto.DataIDs);
             if (dataItems.Count != dto.DataIDs.Count || dataItems.Any(d => d.IsAssigned))
             {
@@ -59,8 +59,7 @@ namespace SWP_BE.Services
                 TaskName = dto.TaskName,
                 Status = TaskModel.TaskStatus.New,
                 Deadline = dto.Deadline ?? DateTime.UtcNow.AddDays(7),
-                RateComplete = 0,
-                RejectCount = 0
+                RateComplete = 0
             };
 
             var taskItems = dataItems.Select(item => new TaskItem
@@ -106,7 +105,6 @@ namespace SWP_BE.Services
                 TaskName = t.TaskName,
                 Status = t.Status.ToString(),
                 RateComplete = t.RateComplete,
-                RejectCount = t.RejectCount,
                 Deadline = t.Deadline,
                 AnnotatorID = t.AnnotatorID,
                 ReviewerID = t.ReviewerID,

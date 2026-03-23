@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SWP_BE.Data;
 using SWP_BE.DTOs;
+using SWP_BE.Models;
 using SWP_BE.Services;
 using System;
 using System.Security.Claims;
 
 namespace SWP_BE.Controllers
+    
 {
     [Authorize]
     [ApiController]
@@ -13,9 +16,15 @@ namespace SWP_BE.Controllers
     public class AnnotatorController : ControllerBase
     {
         private readonly AnnotatorService _service;
-        private readonly Guid _mockUserId = Guid.Parse("..."); // Sau này lấy từ JWT
+        private readonly IProgressService _progressService;
+        private readonly AppDbContext _context;
 
-        public AnnotatorController(AnnotatorService service) { _service = service; }
+        public AnnotatorController(AppDbContext context, AnnotatorService service, IProgressService progressService)
+        {
+            _service = service;
+            _progressService = progressService;
+            _context = context;
+        }
 
         private Guid GetCurrentUserId()
         {
@@ -79,8 +88,12 @@ namespace SWP_BE.Controllers
         [HttpPost("task-items/{itemId}/annotation")]
         public async System.Threading.Tasks.Task<IActionResult> Save(Guid itemId, [FromBody] SaveAnnotationDto dto)
         {
-            var result = await _service.SaveAnnotation(itemId, dto);
-            return result ? Ok(new { message = "Lưu thành công" }) : BadRequest("Lưu thất bại.");
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized();
+            var result = await _service.SaveAnnotation(itemId, userId, dto);
+            return result
+                ? Ok(new { message = "Lưu thành công" })
+                : BadRequest("Bạn không có quyền sửa Task này hoặc Task đã bị khóa (đã nộp/fail).");
         }
 
         /// <summary>
@@ -121,6 +134,9 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _service.SubmitTask(taskId, userId, false);
+            if (!result.Success)
+                return BadRequest(result.Message);
+            await _progressService.UpdateTaskAndProject(taskId);
             return result.Success ? Ok(result.Message) : BadRequest(result.Message);
         }
 
@@ -135,6 +151,9 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _service.SubmitTask(taskId, userId, true);
+            if (!result.Success)
+                return BadRequest(result.Message);
+            await _progressService.UpdateTaskAndProject(taskId);
             return result.Success ? Ok(result.Message) : BadRequest(result.Message);
         }
 
@@ -145,11 +164,64 @@ namespace SWP_BE.Controllers
         /// Dùng khi bị Reviewer đánh rớt nhưng Annotator thấy mình làm đúng.
         /// </remarks>
         [HttpPost("tasks/{taskId}/dispute")]
-        public async System.Threading.Tasks.Task<IActionResult> Dispute(Guid taskId, [FromBody] DisputeRequestDto dto)
+        public async Task<IActionResult> CreateDispute(Guid taskId, DisputeRequestDto dto)
         {
             var userId = GetCurrentUserId();
-            var result = await _service.CreateDispute(taskId, userId, dto);
-            return result ? Ok(new { message = "Đã gửi khiếu nại" }) : BadRequest("Gửi khiếu nại thất bại.");
+
+            // 1. Tạo Dispute
+            var dispute = new Dispute
+            {
+                TaskID = taskId,
+                UserID = userId,
+                Reason = dto.Reason,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Disputes.Add(dispute);
+
+            // 2. Tạo ReviewHistory (dummy để link comment)
+            var history = new ReviewHistory
+            {
+                TaskID = taskId,
+                ReviewerID = userId, // tạm dùng annotator
+                ReviewAt = DateTime.UtcNow,
+                FinalResult = "DisputeEvidence"
+            };
+
+            _context.ReviewHistories.Add(history);
+            await _context.SaveChangesAsync();
+
+            // 3. Lưu evidence vào ReviewComment
+            var comment = new ReviewComment
+            {
+                HistoryID = history.HistoryID,
+                Comment = dto.Reason,
+
+                // 🔥 LƯU JSON ảnh vào ErrorRegion
+                EvidenceImages = System.Text.Json.JsonSerializer.Serialize(dto.EvidenceImages)
+            };
+
+            _context.ReviewComments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Dispute created with evidence" });
+        }
+
+        /// <summary>
+        /// 8.1 Lấy danh sách lịch sử khiếu nại của chính Annotator
+        /// </summary>
+        /// <remarks>
+        /// Dùng để hiển thị trạng thái khiếu nại (Pending/Accepted/Rejected) và lời nhắn của Manager
+        /// </remarks>
+        [HttpGet("annotator/disputes")]
+        public async Task<IActionResult> GetMyDisputes()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized("Token không hợp lệ.");
+
+            var disputes = await _service.GetMyDisputes(userId);
+            return Ok(disputes);
         }
 
         /// <summary>
@@ -165,5 +237,32 @@ namespace SWP_BE.Controllers
             var data = await _service.GetReputation(userId);
             return data != null ? Ok(data) : NotFound("Không thấy dữ liệu.");
         }
+
+        //API bổ sung: Lấy thống kê chi tiết về hiệu suất làm việc của Annotator (số Task đã hoàn thành, tỷ lệ bị reject, điểm trung bình mỗi Task...)
+        [HttpGet("annotator/my-stats")]
+        public async Task<IActionResult> GetMyStats([FromServices] ReputationService repService)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized();
+
+            var stats = await repService.GetAnnotatorStatsAsync(userId);
+            if (stats == null)
+            {
+                return Ok(new
+                {
+                    totalCompletedTasks = 0,
+                    firstTryApprovedTasks = 0,
+                    totalWorkingHours = 0,
+                    avgCompletionHours = 0,
+                    currentPerfectStreak = 0,
+                    rejectDisputedTasksStreak = 0,
+                    experience = 0,
+                    reputationPoints = 100 
+                });
+            }
+
+            return Ok(stats);
+        }
+
     }
 }

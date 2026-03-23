@@ -21,6 +21,7 @@ namespace SWP_BE.DTOs
 
     public class TaskDetailDto : AnnotatorTaskDto
     {
+        public string Guideline { get; set; } = string.Empty;
         public List<TaskItemDto> TaskItems { get; set; } = new();
 
         public List<LabelInfoDto> AvailableLabels { get; set; } = new();
@@ -55,6 +56,7 @@ namespace SWP_BE.DTOs
     public class DisputeRequestDto
     {
         public string Reason { get; set; } = string.Empty;
+        public List<string> EvidenceImages { get; set; } = new();
     }
 
     public class ReputationResponseDto

@@ -3,13 +3,36 @@ using static SWP_BE.Models.User;
 
 namespace SWP_BE.DTOs
 {
+    public class ResetPasswordByTokenRequest
+    {
+        public string Token { get; set; }
+        public string NewPassword { get; set; }
+    }
+    public class ChangePasswordRequest
+    {
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
+    public class ResetPasswordRequests
+    {
+        public string Email { get; set; }
+        public string Otp { get; set; }
+        public string NewPassword { get; set; }
+    }
+
+    public static class PasswordResetStore
+    {
+        public static Dictionary<string, Guid> ResetTokens = new();
+    }
+
+
     // DTO hứng dữ liệu khi Admin tạo tài khoản mới
     public class UserCreateDTO
     {
         [Required] public string UserName { get; set; } = string.Empty;
         [Required] public string Password { get; set; } = string.Empty;
         [Required] public string FullName { get; set; } = string.Empty;
-        [Required] public UserRole Role { get; set; } = 0; // Manager, Annotator, Reviewer
+        [Required] public UserRole Role { get; set; } = 0; 
         [Required, EmailAddress] public string Email { get; set; } = string.Empty;
         public string? Expertise { get; set; }
     }
@@ -59,5 +82,10 @@ namespace SWP_BE.DTOs
         public int Score { get; set; }
         public int CurrentTaskCount { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    public class GoogleLoginDTO
+    {
+        public string Token { get; set; } = string.Empty;
     }
 }

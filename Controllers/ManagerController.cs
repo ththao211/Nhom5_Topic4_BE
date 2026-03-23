@@ -3,11 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
+using SWP_BE.Models;
 using SWP_BE.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace SWP_BE.Controllers
 {
@@ -21,26 +19,34 @@ namespace SWP_BE.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
+        private readonly ReputationService _reputationService;
+        private readonly ExportService _exportService;
 
         public ManagerController(
             IProjectService projectService,
+            ReputationService reputationService,
+            ExportService exportService,
             AppDbContext context)
         {
             _projectService = projectService;
+            _reputationService = reputationService;
+            _exportService = exportService;
             _context = context;
         }
+
         private Guid GetManagerId()
         {
-            var claim = User.FindFirst("id");
-            if (claim == null) throw new UnauthorizedAccessException("Phiên đăng nhập hết hạn hoặc thiếu ID.");
-            return Guid.Parse(claim.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            {
+                return userId;
+            }
+
+            throw new UnauthorizedAccessException("Phiên đăng nhập không hợp lệ hoặc thiếu ID người dùng.");
         }
 
-        /// <summary> 
-        /// [Role: Manager] Lấy danh sách toàn bộ dự án mà Manager này đang quản lý. 
-        /// </summary>
-        /// <response code="200">Trả về danh sách các dự án.</response>
-        /// <response code="401">Chưa đăng nhập.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<object>), 200)]
         public async Task<IActionResult> GetProjects()
@@ -49,12 +55,6 @@ namespace SWP_BE.Controllers
             return Ok(await _projectService.GetProjectsAsync(managerId));
         }
 
-        /// <summary> 
-        /// [Role: Manager] Lấy thông tin chi tiết của một dự án cụ thể. 
-        /// </summary>
-        /// <param name="id">ID của dự án (Guid)</param>
-        /// <response code="200">Trả về chi tiết dự án.</response>
-        /// <response code="404">Dự án không tồn tại hoặc không thuộc quyền quản lý của bạn.</response>
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -65,15 +65,6 @@ namespace SWP_BE.Controllers
             return result == null ? NotFound("Project không tồn tại.") : Ok(result);
         }
 
-        /// <summary> 
-        /// [Role: Manager] Tạo mới một dự án gán nhãn. 
-        /// </summary>
-        /// <remarks>
-        /// Chức năng này bao gồm thiết lập tên, mô tả và loại dữ liệu cho dự án.
-        /// </remarks>
-        /// <param name="dto">Thông tin dự án mới</param>
-        /// <response code="200">Tạo dự án thành công.</response>
-        /// <response code="400">Dữ liệu đầu vào không hợp lệ.</response>
         [HttpPost]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -84,13 +75,6 @@ namespace SWP_BE.Controllers
             return Ok(new { message = "Project created successfully", projectId = projectId });
         }
 
-        /// <summary> 
-        /// [Role: Manager] Cập nhật thông tin cơ bản của dự án. 
-        /// </summary>
-        /// <param name="id">ID của dự án (Guid)</param>
-        /// <param name="dto">Thông tin cập nhật</param>
-        /// <response code="200">Cập nhật thành công.</response>
-        /// <response code="404">Không tìm thấy dự án.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -101,12 +85,6 @@ namespace SWP_BE.Controllers
             return success ? Ok(new { message = "Updated" }) : NotFound();
         }
 
-        /// <summary> 
-        /// [Role: Manager] Thay đổi trạng thái hoạt động của dự án. 
-        /// </summary>
-        /// <param name="id">ID dự án (Guid)</param>
-        /// <param name="status">Trạng thái mới (Ví dụ: Active, Deactive, Closed)</param>
-        /// <response code="200">Cập nhật trạng thái thành công.</response>
         [HttpPatch("{id}/status")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> ChangeStatus(Guid id, [FromQuery] string status)
@@ -116,11 +94,6 @@ namespace SWP_BE.Controllers
             return success ? Ok(new { message = "Status updated" }) : NotFound();
         }
 
-        /// <summary> 
-        /// [Role: Manager] Cập nhật đường dẫn file hướng dẫn (Guideline) cho dự án. 
-        /// </summary>
-        /// <param name="id">ID dự án (Guid)</param>
-        /// <param name="url">URL của file guideline mới (Firebase/Cloud URL)</param>
         [HttpPost("{id}/guideline")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> UpdateGuideline(Guid id, [FromQuery] string url)
@@ -130,16 +103,6 @@ namespace SWP_BE.Controllers
             return success ? Ok(new { message = "Guideline updated" }) : NotFound();
         }
 
-        /// <summary> 
-        /// [Role: Manager] Tải lên danh sách liên kết dữ liệu thô vào dự án. 
-        /// </summary>
-        /// <remarks>
-        /// Dữ liệu này sẽ ở trạng thái "Unassigned" cho đến khi được phân công vào Task.
-        /// </remarks>
-        /// <param name="id">ID dự án (Guid)</param>
-        /// <param name="dto">Danh sách URLs dữ liệu</param>
-        /// <response code="200">Thêm dữ liệu thành công.</response>
-        /// <response code="400">Danh sách links trống.</response>
         [HttpPost("{id}/data")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -151,29 +114,9 @@ namespace SWP_BE.Controllers
             return success ? Ok(new { message = "Data added" }) : NotFound();
         }
 
-        /// <summary> 
-        /// [Role: Manager] Chia nhỏ dữ liệu thành các Task (Phân lô dữ liệu). 
-        /// </summary>
-        /// <param name="id">ID dự án (Guid)</param>
-        /// <param name="dto">Cấu hình chia task</param>
-        /// <response code="200">Chia task thành công.</response>
-        /// <response code="400">Lỗi nghiệp vụ khi chia task.</response>
-        [HttpPost("{id}/split-tasks")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> SplitTasks(Guid id, [FromBody] SplitTaskDto dto)
-        {
-            var managerId = GetManagerId();
-            try
-            {
-                var result = await _projectService.SplitTasksAsync(id, dto, managerId);
-                return result == null ? NotFound() : Ok(result);
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-
         [HttpGet("{projectId}/overview")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetProjectOverview(Guid projectId)
         {
             var managerId = GetManagerId();
@@ -194,12 +137,9 @@ namespace SWP_BE.Controllers
             if (project == null)
                 return NotFound("Project không tồn tại hoặc không thuộc quyền của bạn.");
 
-            // Statistics
             var totalTasks = project.Tasks?.Count ?? 0;
             var totalDataItems = project.DataItems?.Count ?? 0;
 
-            // FIX: Chỉ sử dụng các trạng thái chắc chắn có trong Enum TaskStatus của bạn
-            // Giả sử: New, InProgress, PendingReview, Approved (Hoặc trạng thái tương đương)
             var completedTasks = project.Tasks?
                 .Count(t => t.Status == SWP_BE.Models.Task.TaskStatus.Approved) ?? 0;
 
@@ -215,7 +155,6 @@ namespace SWP_BE.Controllers
                     project.ProjectID,
                     project.ProjectName,
                     project.Description,
-                    project.Topic,
                     Status = project.Status.ToString(),
                     project.ProjectType,
                     project.Deadline,
@@ -232,7 +171,6 @@ namespace SWP_BE.Controllers
 
                 totalDataItems,
 
-                // Lấy đúng màu sắc để Frontend vẽ Overview (như Dashboard Manager)
                 labels = project.ProjectLabels?.Select(pl => new
                 {
                     pl.ProjectLabelID,
@@ -275,6 +213,171 @@ namespace SWP_BE.Controllers
             };
 
             return Ok(result);
+        }
+
+        [HttpGet("{projectId}/disputes")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetDisputes(Guid projectId)
+        {
+            var managerId = GetManagerId();
+
+            var disputes = await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Where(d =>
+                    d.Task.ProjectID == projectId &&
+                    d.Task.Project.ManagerID == managerId)
+                .Select(d => new
+                {
+                    d.DisputeID,
+                    TaskName = d.Task.TaskName,
+                    ProjectName = d.Task.Project.ProjectName,
+                })
+                .OrderByDescending(d => d.DisputeID)
+                .ToListAsync();
+
+            return Ok(disputes);
+        }
+
+        [HttpGet("disputes")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetAllDisputesForDashboard()
+        {
+            var managerId = GetManagerId();
+
+            var disputes = await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Where(d => d.Task.Project.ManagerID == managerId)
+                .Select(d => new
+                {
+                    d.DisputeID,
+                    TaskName = d.Task.TaskName,
+                    ProjectName = d.Task.Project.ProjectName,
+                    Status = d.Status,
+                    d.CreatedAt
+                })
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(disputes);
+        }
+
+        [HttpGet("disputes/{disputeId}")]
+        public async Task<IActionResult> GetDisputeDetail(Guid disputeId)
+        {
+            var managerId = GetManagerId();
+
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d =>
+                    d.DisputeID == disputeId &&
+                    d.Task.Project.ManagerID == managerId);
+
+            if (dispute == null)
+                return NotFound();
+
+            var evidenceImages = await _context.ReviewComments
+                .Where(rc => rc.ReviewHistory.TaskID == dispute.TaskID
+                          && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                .OrderByDescending(rc => rc.CreatedAt)
+                .Select(rc => rc.EvidenceImages)
+                .FirstOrDefaultAsync();
+
+            var images = string.IsNullOrEmpty(evidenceImages)
+                ? new List<string>()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(evidenceImages);
+
+            return Ok(new
+            {
+                dispute.DisputeID,
+                TaskName = dispute.Task.TaskName,
+                ProjectName = dispute.Task.Project.ProjectName,
+                Annotator = dispute.User.FullName,
+                dispute.Reason,
+                dispute.Status,
+                EvidenceImages = images,
+                dispute.CreatedAt
+            });
+        }
+
+        [HttpPatch("disputes/{disputeId}")]
+        public async Task<IActionResult> ResolveDispute(Guid disputeId, [FromQuery] string action, [FromBody] string managerComment)
+        {
+            var managerId = GetManagerId();
+
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.DisputeID == disputeId && d.Task.Project.ManagerID == managerId);
+
+            if (dispute == null) return NotFound("Dispute không tồn tại.");
+            if (dispute.Status != "Pending") return BadRequest("Dispute đã được xử lý.");
+            dispute.ManagerComment = managerComment;
+
+            if (action == "accept")
+            {
+                dispute.Status = "Accepted";
+                if (dispute.Task.Status == Models.Task.TaskStatus.Fail)
+                {
+                    dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
+                }
+                dispute.Task.CurrentRound--;
+
+                if (dispute.Task.AnnotatorID.HasValue)
+                {
+                    await _reputationService.HandleTaskCompletionAsync(dispute.Task.AnnotatorID.Value, dispute.Task);
+                }
+
+                if (dispute.Task.ReviewerID.HasValue)
+                {
+                    await _reputationService.HandleReviewerDisputeLossAsync(dispute.Task.ReviewerID.Value, dispute.Task.TaskID);
+                }
+
+                dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
+            }
+            else if (action == "reject")
+            {
+                dispute.Status = "Rejected";
+                await _reputationService.HandleAnnotatorDisputeLossAsync(dispute.UserID, dispute.TaskID);
+            }
+            else
+            {
+                return BadRequest("Action phải là accept hoặc reject.");
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Dispute resolved and scores updated." });
+        }
+
+        [HttpGet("yolo/{projectId}")]
+        public async Task<IActionResult> ExportYolo(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportYoloZipAsync(projectId);
+                return File(fileBytes, "application/zip", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Export YOLO thất bại", error = ex.Message });
+            }
+        }
+
+        [HttpGet("coco/{projectId}")]
+        public async Task<IActionResult> ExportCoco(Guid projectId)
+        {
+            try
+            {
+                var (fileBytes, fileName) = await _exportService.ExportCocoFileAsync(projectId);
+                return File(fileBytes, "application/json", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Export COCO thất bại", error = ex.Message });
+            }
         }
     }
 }

@@ -71,8 +71,7 @@ namespace SWP_BE.Controllers
                     Status = t.Status.ToString(),
                     t.Deadline,
                     t.AnnotatorID,
-                    t.ReviewerID,
-                    t.RejectCount
+                    t.ReviewerID
                 })
                 .ToListAsync();
 

@@ -36,6 +36,7 @@ namespace SWP_BE.Services
                 TaskName = t.TaskName,
                 Status = t.Status.ToString(),
                 Deadline = t.Deadline,
+                Guideline = t.Project?.GuidelineUrl ?? "",
                 CurrentRound = t.CurrentRound,
                 TaskItems = t.TaskItems.Select(ti => new TaskItemDto
                 {
@@ -62,21 +63,24 @@ namespace SWP_BE.Services
             };
         }
 
-        // --- FIX LỖI 500: XÓA CŨ - THÊM MỚI AN TOÀN ---
-        public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, SaveAnnotationDto dto)
+        public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, Guid userId, SaveAnnotationDto dto)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
-            if (item == null) return false;
+            if (item == null || item.Task == null ||
+                item.Task.AnnotatorID != userId ||
+                (item.Task.Status != SWP_BE.Models.Task.TaskStatus.InProgress &&
+                item.Task.Status != SWP_BE.Models.Task.TaskStatus.Rejected))
+            {
+                return false;
+            }
 
             try
             {
-                // 1. Xóa sạch các bản ghi cũ khỏi Database thông qua Repository
                 if (item.TaskItemDetails != null && item.TaskItemDetails.Any())
                 {
                     _repo.DeleteItemDetails(item.TaskItemDetails);
                 }
 
-                // 2. Thêm mới danh sách tọa độ từ Frontend
                 if (dto.Annotations != null)
                 {
                     foreach (var ann in dto.Annotations)
@@ -86,18 +90,15 @@ namespace SWP_BE.Services
                             AnnotationData = ann.AnnotationData,
                             Content = ann.Content,
                             Field = ann.Field,
-                            TaskItemID = itemId // Sử dụng đúng tên khóa ngoại trong Model
+                            TaskItemID = itemId
                         });
                     }
                 }
-
-                // 3. Thực thi lưu
                 await _repo.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                // Ném lỗi để log Server ghi lại nguyên nhân thực sự (thường là tràn NVARCHAR)
                 throw new Exception($"Lỗi lưu Database: {ex.Message}", ex);
             }
         }
@@ -106,24 +107,30 @@ namespace SWP_BE.Services
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return (false, "Task không tồn tại.");
-            if (isResubmit && task.CurrentRound >= 3) return (false, "Đã quá 3 lần nộp lại.");
+
+            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress &&
+                task.Status != SWP_BE.Models.Task.TaskStatus.Rejected)
+                return (false, "Bạn chỉ có thể nộp khi Task đang ở trạng thái InProgress.");
+
+            if (isResubmit && task.CurrentRound >= 4)
+                return (false, "Bạn đã sử dụng hết 3 lần sửa bài (Vòng 4 là cơ hội cuối cùng).");
 
             var items = task.TaskItems ?? new List<TaskItem>();
             if (items.Any(ti => !ti.IsFlagged && !(ti.TaskItemDetails?.Any() ?? false)))
-                return (false, "Bạn chưa hoàn thành tất cả các file trong Task.");
+                return (false, "Vui lòng hoàn thành gán nhãn cho tất cả các file trước khi nộp.");
 
             task.Status = SWP_BE.Models.Task.TaskStatus.PendingReview;
-            if (isResubmit) task.CurrentRound++;
+            task.CurrentRound++;
 
             await _repo.SaveChangesAsync();
-            return (true, "Nộp bài thành công.");
+            return (true, "Nộp bài thành công. Vui lòng đợi Reviewer phản hồi.");
         }
 
         public async System.Threading.Tasks.Task<bool> StartTask(Guid taskId, Guid userId)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return false;
-            if (task.Status == SWP_BE.Models.Task.TaskStatus.New)
+            if (task.Status == SWP_BE.Models.Task.TaskStatus.New || task.Status == SWP_BE.Models.Task.TaskStatus.Rejected)
             {
                 task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
                 await _repo.SaveChangesAsync();
@@ -158,6 +165,15 @@ namespace SWP_BE.Services
             await _repo.AddDisputeAsync(dispute);
             await _repo.SaveChangesAsync();
             return true;
+        }
+
+        // ============================================================
+        // 🔥 7.1 LẤY DANH SÁCH KHIẾU NẠI CỦA ANNOTATOR
+        // ============================================================
+        public async System.Threading.Tasks.Task<IEnumerable<object>> GetMyDisputes(Guid userId)
+        {
+            // Repository đã chuẩn bị đủ dữ liệu (kèm EvidenceImages), trả thẳng về luôn!
+            return await _repo.GetDisputesByUserIdAsync(userId);
         }
 
         public async System.Threading.Tasks.Task<ReputationResponseDto?> GetReputation(Guid userId)

@@ -8,8 +8,6 @@ namespace SWP_BE.DTOs
         public Guid ProjectID { get; set; }
         public int LabelID { get; set; }
         public string CustomName { get; set; } = string.Empty;
-
-        // Thông tin map từ kho nhãn gốc để UI hiển thị
         public string LabelName { get; set; } = string.Empty;
         public string DefaultColor { get; set; } = string.Empty;
     }
@@ -28,7 +26,7 @@ namespace SWP_BE.DTOs
         public string DefaultColor { get; set; } = "#000000";
         public string Category { get; set; } = "Custom";
 
-        public bool SaveToLibrary { get; set; } // Có lưu vào Kho tổng (Label gốc) không?
+        public bool SaveToLibrary { get; set; } 
     }
 
     public class UpdateProjectLabelDto

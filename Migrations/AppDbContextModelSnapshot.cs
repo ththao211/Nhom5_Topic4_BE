@@ -2,8 +2,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SWP_BE.Data;
 
 #nullable disable
@@ -18,28 +18,28 @@ namespace SWP_BE.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid?>("PerformedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("TargetUserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -50,38 +50,66 @@ namespace SWP_BE.Migrations
                     b.ToTable("ActivityLogs");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
+                {
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("AvgCompletionHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("CurrentPerfectStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FirstTryApprovedTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RejectDisputedTasksStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalCompletedTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("TotalWorkingHours")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("UserID");
+
+                    b.ToTable("AnnotatorStats");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
                     b.Property<Guid>("DataID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
 
                     b.Property<string>("FileType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int?>("Height")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsAssigned")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int?>("Width")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("DataID");
 
@@ -94,31 +122,31 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("DisputeID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ManagerComment")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("DisputeID");
 
@@ -133,23 +161,23 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("ExportID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Format")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("ItemCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ManagerID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("ExportID");
 
@@ -164,21 +192,21 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("LabelID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LabelID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LabelID"));
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("DefaultColor")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("LabelName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("LabelID");
 
@@ -189,40 +217,36 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("ProjectID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("Deadline")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("GuidelineUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("ManagerID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProjectType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Topic")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("ProjectID");
 
@@ -235,19 +259,19 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("ProjectLabelID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectLabelID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectLabelID"));
 
                     b.Property<string>("CustomName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("LabelID")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("ProjectLabelID");
 
@@ -262,27 +286,38 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("ReputationLogID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReputationLogID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReputationLogID"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("NewScore")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OldScore")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RuleID")
+                        .HasColumnType("integer");
 
                     b.Property<int>("ScoreChange")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("ReputationLogID");
+
+                    b.HasIndex("RuleID");
 
                     b.HasIndex("TaskID");
 
@@ -291,27 +326,223 @@ namespace SWP_BE.Migrations
                     b.ToTable("ReputationLogs");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.ReputationRule", b =>
+                {
+                    b.Property<int>("RuleID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RuleID"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RuleID");
+
+                    b.ToTable("ReputationRules");
+
+                    b.HasData(
+                        new
+                        {
+                            RuleID = 1,
+                            Category = "Reward",
+                            Description = "Hoàn thành ngay lần đầu (0 reject)",
+                            IsActive = true,
+                            RuleName = "Reward_Perfect",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3374),
+                            Value = 20
+                        },
+                        new
+                        {
+                            RuleID = 2,
+                            Category = "Bonus",
+                            Description = "Thưởng thêm nếu RateComplete > 95%",
+                            IsActive = true,
+                            RuleName = "Bonus_HighRate",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3387),
+                            Value = 2
+                        },
+                        new
+                        {
+                            RuleID = 3,
+                            Category = "Penalty",
+                            Description = "Trừ điểm khi Approve ở lần sửa 2",
+                            IsActive = true,
+                            RuleName = "Penalty_Reject_2",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3388),
+                            Value = -5
+                        },
+                        new
+                        {
+                            RuleID = 4,
+                            Category = "Penalty",
+                            Description = "Trừ điểm khi Approve ở lần sửa 3",
+                            IsActive = true,
+                            RuleName = "Penalty_Reject_3",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3389),
+                            Value = -10
+                        },
+                        new
+                        {
+                            RuleID = 5,
+                            Category = "Penalty",
+                            Description = "Task bị Fail (Reject lần 4)",
+                            IsActive = true,
+                            RuleName = "Penalty_Task_Fail",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3391),
+                            Value = -20
+                        },
+                        new
+                        {
+                            RuleID = 6,
+                            Category = "Threshold",
+                            Description = "Ngưỡng >= 50đ",
+                            IsActive = true,
+                            RuleName = "High_Threshold",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3392),
+                            Value = 50
+                        },
+                        new
+                        {
+                            RuleID = 7,
+                            Category = "Threshold",
+                            Description = "Ngưỡng 20 - 50đ",
+                            IsActive = true,
+                            RuleName = "Low_Threshold",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3393),
+                            Value = 20
+                        },
+                        new
+                        {
+                            RuleID = 8,
+                            Category = "Limit",
+                            Description = "Max 3 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_High",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3394),
+                            Value = 3
+                        },
+                        new
+                        {
+                            RuleID = 9,
+                            Category = "Limit",
+                            Description = "Max 2 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_Normal",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3395),
+                            Value = 2
+                        },
+                        new
+                        {
+                            RuleID = 10,
+                            Category = "Limit",
+                            Description = "Max 1 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_Warning",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3396),
+                            Value = 1
+                        },
+                        new
+                        {
+                            RuleID = 11,
+                            Category = "Limit",
+                            Description = "Số task Fail liên tiếp để Annotator bị khóa tài khoản",
+                            IsActive = true,
+                            RuleName = "Max_Consecutive_Fails",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3397),
+                            Value = 3
+                        },
+                        new
+                        {
+                            RuleID = 16,
+                            Category = "Limit",
+                            Description = "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản",
+                            IsActive = true,
+                            RuleName = "Max_Wrong_Disputed_Tasks_Streak",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3398),
+                            Value = 3
+                        },
+                        new
+                        {
+                            RuleID = 12,
+                            Category = "Penalty",
+                            Description = "Annotator khiếu nại sai (Dispute Rejected)",
+                            IsActive = true,
+                            RuleName = "Penalty_Annotator_Rejected_Dispute",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3399),
+                            Value = -5
+                        },
+                        new
+                        {
+                            RuleID = 13,
+                            Category = "Limit",
+                            Description = "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản",
+                            IsActive = true,
+                            RuleName = "Max_Disputed_Tasks_Streak",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3401),
+                            Value = 3
+                        },
+                        new
+                        {
+                            RuleID = 14,
+                            Category = "Penalty",
+                            Description = "Reviewer bắt lỗi sai (Dispute lost)",
+                            IsActive = true,
+                            RuleName = "Penalty_Reviewer_False_Check",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3402),
+                            Value = -10
+                        },
+                        new
+                        {
+                            RuleID = 15,
+                            Category = "Reward",
+                            Description = "Thưởng Reviewer reject 5 task liên tiếp không sai",
+                            IsActive = true,
+                            RuleName = "Reward_Reviewer_Perfect_Reject_Streak",
+                            UpdatedAt = new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3403),
+                            Value = 10
+                        });
+                });
+
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
                 {
                     b.Property<int>("CommentID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommentID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CommentID"));
 
                     b.Property<string>("Comment")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("ErrorRegion")
+                    b.Property<string>("EvidenceImages")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("HistoryID")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("CommentID");
 
@@ -324,26 +555,26 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("HistoryID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HistoryID"));
 
                     b.Property<string>("Field")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FinalResult")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("ReviewAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("ReviewerID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("HistoryID");
 
@@ -354,30 +585,55 @@ namespace SWP_BE.Migrations
                     b.ToTable("ReviewHistories");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
+                {
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("AvgReviewHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("CurrentPerfectRejectStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DisputedTasksStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("TotalReviewHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("TotalReviewedTasks")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserID");
+
+                    b.ToTable("ReviewerStats");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
                 {
                     b.Property<int>("ConfigID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConfigID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ConfigID"));
 
                     b.Property<Guid>("AdminID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AllowedFileTypes")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("MaxProjectStorageMB")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("ConfigID");
 
@@ -390,27 +646,27 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("LogID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LogID"));
 
                     b.Property<string>("ActionType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("TargetID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("LogID");
 
@@ -423,44 +679,38 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("TaskID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("AnnotatorID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CurrentRound")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("Deadline")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("ProjectID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<double>("RateComplete")
-                        .HasColumnType("float");
-
-                    b.Property<int>("RejectCount")
-                        .HasColumnType("int");
+                        .HasColumnType("double precision");
 
                     b.Property<Guid?>("ReviewerID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<double>("SubmissionRate")
-                        .HasColumnType("float");
+                        .HasColumnType("integer");
 
                     b.Property<string>("TaskName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("TaskID");
 
@@ -477,16 +727,16 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("ItemID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("DataID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsFlagged")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("TaskID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("ItemID");
 
@@ -501,27 +751,27 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<int>("IDDetail")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDDetail"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IDDetail"));
 
                     b.Property<string>("AnnotationData")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Field")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("TaskItemID")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("IDDetail");
 
@@ -534,43 +784,40 @@ namespace SWP_BE.Migrations
                 {
                     b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AvatarUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("CurrentTaskCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Expertise")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirebaseUid")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
+
+                    b.Property<string>("GoogleAccountId")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Password")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Role")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Score")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.HasKey("UserID");
 
@@ -595,6 +842,17 @@ namespace SWP_BE.Migrations
                     b.Navigation("Performer");
 
                     b.Navigation("TargetUser");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "User")
+                        .WithOne("AnnotatorStat")
+                        .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
@@ -678,6 +936,11 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
                 {
+                    b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
+                        .WithMany()
+                        .HasForeignKey("RuleID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
@@ -688,6 +951,8 @@ namespace SWP_BE.Migrations
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("AppliedRule");
 
                     b.Navigation("Task");
 
@@ -722,6 +987,17 @@ namespace SWP_BE.Migrations
                     b.Navigation("Reviewer");
 
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "User")
+                        .WithOne("ReviewerStat")
+                        .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
@@ -822,11 +1098,15 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
+                    b.Navigation("AnnotatorStat");
+
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
 
                     b.Navigation("ReputationLogs");
+
+                    b.Navigation("ReviewerStat");
 
                     b.Navigation("ReviewerTasks");
                 });

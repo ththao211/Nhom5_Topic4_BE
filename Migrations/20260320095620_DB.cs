@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class DB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,6 +29,24 @@ namespace SWP_BE.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ReputationRules",
+                columns: table => new
+                {
+                    RuleID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RuleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Value = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReputationRules", x => x.RuleID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -36,8 +56,7 @@ namespace SWP_BE.Migrations
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FirebaseUid = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AvatarUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GoogleAccountId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Expertise = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Score = table.Column<int>(type: "int", nullable: false),
                     CurrentTaskCount = table.Column<int>(type: "int", nullable: false),
@@ -76,13 +95,35 @@ namespace SWP_BE.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AnnotatorStats",
+                columns: table => new
+                {
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TotalCompletedTasks = table.Column<int>(type: "int", nullable: false),
+                    FirstTryApprovedTasks = table.Column<int>(type: "int", nullable: false),
+                    TotalWorkingHours = table.Column<double>(type: "float", nullable: false),
+                    AvgCompletionHours = table.Column<double>(type: "float", nullable: false),
+                    CurrentPerfectStreak = table.Column<int>(type: "int", nullable: false),
+                    RejectDisputedTasksStreak = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnnotatorStats", x => x.UserID);
+                    table.ForeignKey(
+                        name: "FK_AnnotatorStats_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
                     ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Topic = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Deadline = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -96,6 +137,28 @@ namespace SWP_BE.Migrations
                     table.ForeignKey(
                         name: "FK_Projects_Users_ManagerID",
                         column: x => x.ManagerID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReviewerStats",
+                columns: table => new
+                {
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TotalReviewedTasks = table.Column<int>(type: "int", nullable: false),
+                    TotalReviewHours = table.Column<double>(type: "float", nullable: false),
+                    AvgReviewHours = table.Column<double>(type: "float", nullable: false),
+                    DisputedTasksStreak = table.Column<int>(type: "int", nullable: false),
+                    CurrentPerfectRejectStreak = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReviewerStats", x => x.UserID);
+                    table.ForeignKey(
+                        name: "FK_ReviewerStats_Users_UserID",
+                        column: x => x.UserID,
                         principalTable: "Users",
                         principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
@@ -234,11 +297,9 @@ namespace SWP_BE.Migrations
                     TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TaskName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    RejectCount = table.Column<int>(type: "int", nullable: false),
                     RateComplete = table.Column<double>(type: "float", nullable: false),
                     Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CurrentRound = table.Column<int>(type: "int", nullable: false),
-                    SubmissionRate = table.Column<double>(type: "float", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -304,15 +365,24 @@ namespace SWP_BE.Migrations
                 {
                     ReputationLogID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ScoreChange = table.Column<int>(type: "int", nullable: false),
-                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ScoreChange = table.Column<int>(type: "int", nullable: false),
+                    OldScore = table.Column<int>(type: "int", nullable: false),
+                    NewScore = table.Column<int>(type: "int", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RuleID = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ReputationLogs", x => x.ReputationLogID);
+                    table.ForeignKey(
+                        name: "FK_ReputationLogs_ReputationRules_RuleID",
+                        column: x => x.RuleID,
+                        principalTable: "ReputationRules",
+                        principalColumn: "RuleID",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ReputationLogs_Tasks_TaskID",
                         column: x => x.TaskID,
@@ -389,7 +459,7 @@ namespace SWP_BE.Migrations
                     CommentID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ErrorRegion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EvidenceImages = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     HistoryID = table.Column<int>(type: "int", nullable: false)
                 },
@@ -425,6 +495,29 @@ namespace SWP_BE.Migrations
                         principalTable: "TaskItems",
                         principalColumn: "ItemID",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.InsertData(
+                table: "ReputationRules",
+                columns: new[] { "RuleID", "Category", "Description", "IsActive", "RuleName", "UpdatedAt", "Value" },
+                values: new object[,]
+                {
+                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1659), 20 },
+                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1675), 2 },
+                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1676), -5 },
+                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1678), -10 },
+                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1679), -20 },
+                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1680), 50 },
+                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1681), 20 },
+                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1682), 3 },
+                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1683), 2 },
+                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1684), 1 },
+                    { 11, "Limit", "Số task Fail liên tiếp để Annotator bị khóa tài khoản", true, "Max_Consecutive_Fails", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1685), 3 },
+                    { 12, "Penalty", "Annotator khiếu nại sai (Dispute Rejected)", true, "Penalty_Annotator_Rejected_Dispute", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1687), -5 },
+                    { 13, "Limit", "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản", true, "Max_Disputed_Tasks_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1688), 3 },
+                    { 14, "Penalty", "Reviewer bắt lỗi sai (Dispute lost)", true, "Penalty_Reviewer_False_Check", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1689), -10 },
+                    { 15, "Reward", "Thưởng Reviewer reject 5 task liên tiếp không sai", true, "Reward_Reviewer_Perfect_Reject_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1690), 10 },
+                    { 16, "Limit", "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản", true, "Max_Wrong_Disputed_Tasks_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1686), 3 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -476,6 +569,11 @@ namespace SWP_BE.Migrations
                 name: "IX_Projects_ManagerID",
                 table: "Projects",
                 column: "ManagerID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReputationLogs_RuleID",
+                table: "ReputationLogs",
+                column: "RuleID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReputationLogs_TaskID",
@@ -556,6 +654,9 @@ namespace SWP_BE.Migrations
                 name: "ActivityLogs");
 
             migrationBuilder.DropTable(
+                name: "AnnotatorStats");
+
+            migrationBuilder.DropTable(
                 name: "Disputes");
 
             migrationBuilder.DropTable(
@@ -571,6 +672,9 @@ namespace SWP_BE.Migrations
                 name: "ReviewComments");
 
             migrationBuilder.DropTable(
+                name: "ReviewerStats");
+
+            migrationBuilder.DropTable(
                 name: "SystemConfigs");
 
             migrationBuilder.DropTable(
@@ -581,6 +685,9 @@ namespace SWP_BE.Migrations
 
             migrationBuilder.DropTable(
                 name: "Labels");
+
+            migrationBuilder.DropTable(
+                name: "ReputationRules");
 
             migrationBuilder.DropTable(
                 name: "ReviewHistories");

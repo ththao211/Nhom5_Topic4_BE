@@ -23,13 +23,10 @@ namespace SWP_BE.Models
         public Guid TaskID { get; set; }
         public string TaskName { get; set; } = string.Empty;
 
-        // [THAY ĐỔI] Dùng Enum thay vì string
         public TaskStatus Status { get; set; } = TaskStatus.New;
-        public int RejectCount { get; set; }
-        public double RateComplete { get; set; } // Tính % hoàn thành
+        public double RateComplete { get; set; }
         public DateTime Deadline { get; set; }
-        public int CurrentRound { get; set; } // Vòng làm việc (Sửa lần 1, lần 2...)
-        public double SubmissionRate { get; set; }
+        public int CurrentRound { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
 

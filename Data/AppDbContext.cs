@@ -25,6 +25,9 @@ namespace SWP_BE.Data
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<ExportHistory> ExportHistories { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<ReputationRule> ReputationRules { get; set; }
+        public DbSet<AnnotatorStat> AnnotatorStats { get; set; }
+        public DbSet<ReviewerStat> ReviewerStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +54,45 @@ namespace SWP_BE.Data
                       .HasForeignKey(a => a.TargetUserId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+            modelBuilder.Entity<ReputationRule>().HasData
+            (
+                // --- Nhóm điểm thưởng/phạt theo lần Reject ---
+                new ReputationRule { RuleID = 1, RuleName = "Reward_Perfect", Value = 20, Category = "Reward", Description = "Hoàn thành ngay lần đầu (0 reject)" },
+                new ReputationRule { RuleID = 2, RuleName = "Bonus_HighRate", Value = 2, Category = "Bonus", Description = "Thưởng thêm nếu RateComplete > 95%" },
+                new ReputationRule { RuleID = 3, RuleName = "Penalty_Reject_2", Value = -5, Category = "Penalty", Description = "Trừ điểm khi Approve ở lần sửa 2" },
+                new ReputationRule { RuleID = 4, RuleName = "Penalty_Reject_3", Value = -10, Category = "Penalty", Description = "Trừ điểm khi Approve ở lần sửa 3" },
+                new ReputationRule { RuleID = 5, RuleName = "Penalty_Task_Fail", Value = -20, Category = "Penalty", Description = "Task bị Fail (Reject lần 4)" },
+
+                // --- Nhóm ngưỡng điểm để Manager Assign Task (Giữ nguyên hoặc chỉnh theo hình) ---
+                new ReputationRule { RuleID = 6, RuleName = "High_Threshold", Value = 50, Category = "Threshold", Description = "Ngưỡng >= 50đ" },
+                new ReputationRule { RuleID = 7, RuleName = "Low_Threshold", Value = 20, Category = "Threshold", Description = "Ngưỡng 20 - 50đ" },
+                new ReputationRule { RuleID = 8, RuleName = "Max_Task_High", Value = 3, Category = "Limit", Description = "Max 3 task" },
+                new ReputationRule { RuleID = 9, RuleName = "Max_Task_Normal", Value = 2, Category = "Limit", Description = "Max 2 task" },
+                new ReputationRule { RuleID = 10, RuleName = "Max_Task_Warning", Value = 1, Category = "Limit", Description = "Max 1 task" },
+                new ReputationRule { RuleID = 11, RuleName = "Max_Consecutive_Fails", Value = 3, Category = "Limit", Description = "Số task Fail liên tiếp để Annotator bị khóa tài khoản" },
+                // --- Nhóm xử lý Khiếu nại (Dispute) MỚI THÊM VÀO ĐÂY ---
+                new ReputationRule { RuleID = 16, RuleName = "Max_Wrong_Disputed_Tasks_Streak", Value = 3, Category = "Limit", Description = "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản" },
+
+                new ReputationRule { RuleID = 12, RuleName = "Penalty_Annotator_Rejected_Dispute", Value = -5, Category = "Penalty", Description = "Annotator khiếu nại sai (Dispute Rejected)" },
+
+                // --- RULE MỚI CHO REVIEWER (Chuỗi phong độ) ---
+                new ReputationRule { RuleID = 13, RuleName = "Max_Disputed_Tasks_Streak", Value = 3, Category = "Limit", Description = "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản" },
+                new ReputationRule { RuleID = 14, RuleName = "Penalty_Reviewer_False_Check", Value = -10, Category = "Penalty", Description = "Reviewer bắt lỗi sai (Dispute lost)" },
+                new ReputationRule { RuleID = 15, RuleName = "Reward_Reviewer_Perfect_Reject_Streak", Value = 10, Category = "Reward", Description = "Thưởng Reviewer reject 5 task liên tiếp không sai" }
+                
+            );
+            // Cấu hình quan hệ 1-1 cho AnnotatorStat
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.AnnotatorStat)
+                .WithOne(s => s.User)
+                .HasForeignKey<AnnotatorStat>(s => s.UserID);
+
+            // Cấu hình quan hệ 1-1 cho ReviewerStat
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.ReviewerStat)
+                .WithOne(s => s.User)
+                .HasForeignKey<ReviewerStat>(s => s.UserID);
+
         }
     }
 }

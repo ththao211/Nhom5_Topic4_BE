@@ -38,8 +38,6 @@ namespace SWP_BE.Services
                     FullName = u.FullName,
                     Role = u.Role,
                     CurrentScore = u.Score,
-
-                    // FIX CS0229: Truy vấn trực tiếp từ DbSet ReputationLogs
                     TotalScoreChange = _context.ReputationLogs
                         .Where(r => r.UserID == u.UserID)
                         .Sum(r => (int?)r.ScoreChange) ?? 0,
@@ -63,8 +61,6 @@ namespace SWP_BE.Services
                     FullName = u.FullName,
                     Role = u.Role,
                     CurrentScore = u.Score,
-
-                    // FIX CS0229: Tránh sử dụng navigation property bị lỗi
                     TotalScoreChange = _context.ReputationLogs
                         .Where(r => r.UserID == u.UserID)
                         .Sum(r => (int?)r.ScoreChange) ?? 0,
@@ -78,7 +74,6 @@ namespace SWP_BE.Services
 
         public async Task<UserScoreResponseDto?> GetByUserId(Guid userId)
         {
-            // Truy vấn User mà không dùng Include cho các thuộc tính bị nhập nhằng
             var query = _context.Users
                 .AsNoTracking()
                 .Where(u => u.UserID == userId);
@@ -91,8 +86,6 @@ namespace SWP_BE.Services
                     FullName = u.FullName,
                     Role = u.Role,
                     CurrentScore = u.Score,
-
-                    // Tính toán trực tiếp để đảm bảo chính xác
                     TotalScoreChange = _context.ReputationLogs
                         .Where(r => r.UserID == u.UserID)
                         .Sum(r => (int?)r.ScoreChange) ?? 0,

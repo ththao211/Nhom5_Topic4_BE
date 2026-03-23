@@ -26,9 +26,8 @@ namespace SWP_BE.Models
         public UserRole Role { get; set; } = 0;
         public string Email { get; set; } = string.Empty;
         //Lưu UID từ Firebase trả về để tăng cường bảo mật
-        public string? FirebaseUid { get; set; }
-        // Lưu Avatar Google để hiện lên UI cho đẹp
-        public string? AvatarUrl { get; set; }
+
+        public string? GoogleAccountId { get; set; }
 
         public string? Expertise { get; set; }
         public int Score { get; set; }
@@ -41,9 +40,12 @@ namespace SWP_BE.Models
         public ICollection<Project>? ManagedProjects { get; set; }
 
         [InverseProperty("Annotator")]
-        public ICollection<Task>? AnnotatorTasks { get; set; }
+        public ICollection<SWP_BE.Models.Task>? AnnotatorTasks { get; set; }
 
         [InverseProperty("Reviewer")]
-        public ICollection<Task>? ReviewerTasks { get; set; }
+        public ICollection<SWP_BE.Models.Task>? ReviewerTasks { get; set; }
+
+        public virtual AnnotatorStat? AnnotatorStat { get; set; }
+        public virtual ReviewerStat? ReviewerStat { get; set; }
     }
 }
