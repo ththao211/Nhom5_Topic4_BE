@@ -304,7 +304,7 @@ namespace SWP_BE.Controllers
         }
 
         [HttpPatch("disputes/{disputeId}")]
-        public async Task<IActionResult> ResolveDispute(Guid disputeId, [FromQuery] string action)
+        public async Task<IActionResult> ResolveDispute(Guid disputeId, [FromQuery] string action, [FromBody] string managerComment)
         {
             var managerId = GetManagerId();
 
@@ -315,6 +315,7 @@ namespace SWP_BE.Controllers
 
             if (dispute == null) return NotFound("Dispute không tồn tại.");
             if (dispute.Status != "Pending") return BadRequest("Dispute đã được xử lý.");
+            dispute.ManagerComment = managerComment;
 
             if (action == "accept")
             {

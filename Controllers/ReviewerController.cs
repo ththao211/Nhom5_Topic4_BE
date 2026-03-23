@@ -301,18 +301,6 @@ namespace SWP_BE.Controllers
             }
         }
 
-        // API này để lấy thống kê chi tiết hơn về hiệu suất của Reviewer (số Task đã duyệt, tỷ lệ duyệt đúng, v.v.)
-        [HttpGet("reviewer/my-stats")]
-        public async Task<IActionResult> GetMyStats([FromServices] ReputationService repService)
-        {
-            // Giả sử anh cũng có hàm GetCurrentUserId() tương tự bên Annotator
-            var userId = GetCurrentUserId();
-            if (userId == Guid.Empty) return Unauthorized();
-
-            var stats = await repService.GetReviewerStatsAsync(userId);
-            return stats != null ? Ok(stats) : NotFound("Chưa có dữ liệu thống kê.");
-        }
-
         // ============================================================
         // HÀM LẤY ID NGƯỜI DÙNG HIỆN TẠI TỪ TOKEN
         // ============================================================

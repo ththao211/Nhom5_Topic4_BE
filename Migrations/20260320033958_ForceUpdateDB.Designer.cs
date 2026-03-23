@@ -12,8 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260320033958_ForceUpdateDB")]
-    partial class ForceUpdateDB
+    [Migration("20260320095620_DB")]
+    partial class DB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,1093 +26,1093 @@ namespace SWP_BE.Migrations
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Action")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid?>("PerformedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("PerformedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TargetUserId")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("TargetUserId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("PerformedBy");
+                b.HasIndex("PerformedBy");
 
-                    b.HasIndex("TargetUserId");
+                b.HasIndex("TargetUserId");
 
-                    b.ToTable("ActivityLogs");
-                });
+                b.ToTable("ActivityLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uuid");
 
-                    b.Property<double>("AvgCompletionHours")
-                        .HasColumnType("double precision");
+                b.Property<double>("AvgCompletionHours")
+                    .HasColumnType("double precision");
 
-                    b.Property<int>("CurrentPerfectStreak")
-                        .HasColumnType("integer");
+                b.Property<int>("CurrentPerfectStreak")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("FirstTryApprovedTasks")
-                        .HasColumnType("integer");
+                b.Property<int>("FirstTryApprovedTasks")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("RejectDisputedTasksStreak")
-                        .HasColumnType("integer");
+                b.Property<int>("RejectDisputedTasksStreak")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("TotalCompletedTasks")
-                        .HasColumnType("integer");
+                b.Property<int>("TotalCompletedTasks")
+                    .HasColumnType("integer");
 
-                    b.Property<double>("TotalWorkingHours")
-                        .HasColumnType("double precision");
+                b.Property<double>("TotalWorkingHours")
+                    .HasColumnType("double precision");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.ToTable("AnnotatorStats");
-                });
+                b.ToTable("AnnotatorStats");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
-                {
-                    b.Property<Guid>("DataID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("DataID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("FileName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("FilePath")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint");
+                b.Property<long>("FileSizeBytes")
+                    .HasColumnType("bigint");
 
-                    b.Property<string>("FileType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("FileType")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int?>("Height")
-                        .HasColumnType("integer");
+                b.Property<int?>("Height")
+                    .HasColumnType("integer");
 
-                    b.Property<bool>("IsAssigned")
-                        .HasColumnType("boolean");
+                b.Property<bool>("IsAssigned")
+                    .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uuid");
 
-                    b.Property<int?>("Width")
-                        .HasColumnType("integer");
+                b.Property<int?>("Width")
+                    .HasColumnType("integer");
 
-                    b.HasKey("DataID");
+                b.HasKey("DataID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("DataItems");
-                });
+                b.ToTable("DataItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
-                {
-                    b.Property<Guid>("DisputeID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("DisputeID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("ManagerComment")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ManagerComment")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime?>("ResolvedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("DisputeID");
+                b.HasKey("DisputeID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("Disputes");
-                });
+                b.ToTable("Disputes");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
-                {
-                    b.Property<Guid>("ExportID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("ExportID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Format")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Format")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("ItemCount")
-                        .HasColumnType("integer");
+                b.Property<int>("ItemCount")
+                    .HasColumnType("integer");
 
-                    b.Property<Guid>("ManagerID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ManagerID")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("ExportID");
+                b.HasKey("ExportID");
 
-                    b.HasIndex("ManagerID");
+                b.HasIndex("ManagerID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("ExportHistories");
-                });
+                b.ToTable("ExportHistories");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Label", b =>
-                {
-                    b.Property<int>("LabelID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("LabelID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LabelID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LabelID"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Category")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("DefaultColor")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("DefaultColor")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("LabelName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("LabelName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("LabelID");
+                b.HasKey("LabelID");
 
-                    b.ToTable("Labels");
-                });
+                b.ToTable("Labels");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.Property<Guid>("ProjectID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("ProjectID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime?>("Deadline")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime?>("Deadline")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("GuidelineUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("GuidelineUrl")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("ManagerID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ManagerID")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("ProjectName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ProjectName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("ProjectType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ProjectType")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("ProjectID");
+                b.HasKey("ProjectID");
 
-                    b.HasIndex("ManagerID");
+                b.HasIndex("ManagerID");
 
-                    b.ToTable("Projects");
-                });
+                b.ToTable("Projects");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ProjectLabel", b =>
-                {
-                    b.Property<int>("ProjectLabelID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("ProjectLabelID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectLabelID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectLabelID"));
 
-                    b.Property<string>("CustomName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("CustomName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("LabelID")
-                        .HasColumnType("integer");
+                b.Property<int>("LabelID")
+                    .HasColumnType("integer");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("ProjectLabelID");
+                b.HasKey("ProjectLabelID");
 
-                    b.HasIndex("LabelID");
+                b.HasIndex("LabelID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.ToTable("ProjectLabels");
-                });
+                b.ToTable("ProjectLabels");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
-                {
-                    b.Property<int>("ReputationLogID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("ReputationLogID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReputationLogID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReputationLogID"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("NewScore")
-                        .HasColumnType("integer");
+                b.Property<int>("NewScore")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("OldScore")
-                        .HasColumnType("integer");
+                b.Property<int>("OldScore")
+                    .HasColumnType("integer");
 
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int?>("RuleID")
-                        .HasColumnType("integer");
+                b.Property<int?>("RuleID")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("ScoreChange")
-                        .HasColumnType("integer");
+                b.Property<int>("ScoreChange")
+                    .HasColumnType("integer");
 
-                    b.Property<Guid?>("TaskID")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("TaskID")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("ReputationLogID");
+                b.HasKey("ReputationLogID");
 
-                    b.HasIndex("RuleID");
+                b.HasIndex("RuleID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("ReputationLogs");
-                });
+                b.ToTable("ReputationLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationRule", b =>
-                {
-                    b.Property<int>("RuleID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("RuleID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RuleID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RuleID"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Category")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                b.Property<bool>("IsActive")
+                    .HasColumnType("boolean");
 
-                    b.Property<string>("RuleName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("RuleName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("UpdatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("Value")
-                        .HasColumnType("integer");
+                b.Property<int>("Value")
+                    .HasColumnType("integer");
 
-                    b.HasKey("RuleID");
+                b.HasKey("RuleID");
 
-                    b.ToTable("ReputationRules");
+                b.ToTable("ReputationRules");
 
-                    b.HasData(
-                        new
-                        {
-                            RuleID = 1,
-                            Category = "Reward",
-                            Description = "Hoàn thành ngay lần đầu (0 reject)",
-                            IsActive = true,
-                            RuleName = "Reward_Perfect",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3827),
-                            Value = 20
-                        },
-                        new
-                        {
-                            RuleID = 2,
-                            Category = "Bonus",
-                            Description = "Thưởng thêm nếu RateComplete > 95%",
-                            IsActive = true,
-                            RuleName = "Bonus_HighRate",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3837),
-                            Value = 2
-                        },
-                        new
-                        {
-                            RuleID = 3,
-                            Category = "Penalty",
-                            Description = "Trừ điểm khi Approve ở lần sửa 2",
-                            IsActive = true,
-                            RuleName = "Penalty_Reject_2",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3838),
-                            Value = -5
-                        },
-                        new
-                        {
-                            RuleID = 4,
-                            Category = "Penalty",
-                            Description = "Trừ điểm khi Approve ở lần sửa 3",
-                            IsActive = true,
-                            RuleName = "Penalty_Reject_3",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3840),
-                            Value = -10
-                        },
-                        new
-                        {
-                            RuleID = 5,
-                            Category = "Penalty",
-                            Description = "Task bị Fail (Reject lần 4)",
-                            IsActive = true,
-                            RuleName = "Penalty_Task_Fail",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3862),
-                            Value = -20
-                        },
-                        new
-                        {
-                            RuleID = 6,
-                            Category = "Threshold",
-                            Description = "Ngưỡng >= 50đ",
-                            IsActive = true,
-                            RuleName = "High_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3864),
-                            Value = 50
-                        },
-                        new
-                        {
-                            RuleID = 7,
-                            Category = "Threshold",
-                            Description = "Ngưỡng 20 - 50đ",
-                            IsActive = true,
-                            RuleName = "Low_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3865),
-                            Value = 20
-                        },
-                        new
-                        {
-                            RuleID = 8,
-                            Category = "Limit",
-                            Description = "Max 3 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_High",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3866),
-                            Value = 3
-                        },
-                        new
-                        {
-                            RuleID = 9,
-                            Category = "Limit",
-                            Description = "Max 2 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_Normal",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3867),
-                            Value = 2
-                        },
-                        new
-                        {
-                            RuleID = 10,
-                            Category = "Limit",
-                            Description = "Max 1 task",
-                            IsActive = true,
-                            RuleName = "Max_Task_Warning",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3868),
-                            Value = 1
-                        },
-                        new
-                        {
-                            RuleID = 11,
-                            Category = "Limit",
-                            Description = "Số task Fail liên tiếp để Annotator bị khóa tài khoản",
-                            IsActive = true,
-                            RuleName = "Max_Consecutive_Fails",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3868),
-                            Value = 3
-                        },
-                        new
-                        {
-                            RuleID = 16,
-                            Category = "Limit",
-                            Description = "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản",
-                            IsActive = true,
-                            RuleName = "Max_Wrong_Disputed_Tasks_Streak",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3869),
-                            Value = 3
-                        },
-                        new
-                        {
-                            RuleID = 12,
-                            Category = "Penalty",
-                            Description = "Annotator khiếu nại sai (Dispute Rejected)",
-                            IsActive = true,
-                            RuleName = "Penalty_Annotator_Rejected_Dispute",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3870),
-                            Value = -5
-                        },
-                        new
-                        {
-                            RuleID = 13,
-                            Category = "Limit",
-                            Description = "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản",
-                            IsActive = true,
-                            RuleName = "Max_Disputed_Tasks_Streak",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3871),
-                            Value = 3
-                        },
-                        new
-                        {
-                            RuleID = 14,
-                            Category = "Penalty",
-                            Description = "Reviewer bắt lỗi sai (Dispute lost)",
-                            IsActive = true,
-                            RuleName = "Penalty_Reviewer_False_Check",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3872),
-                            Value = -10
-                        },
-                        new
-                        {
-                            RuleID = 15,
-                            Category = "Reward",
-                            Description = "Thưởng Reviewer reject 5 task liên tiếp không sai",
-                            IsActive = true,
-                            RuleName = "Reward_Reviewer_Perfect_Reject_Streak",
-                            UpdatedAt = new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3873),
-                            Value = 10
-                        });
-                });
+                b.HasData(
+                    new
+                    {
+                        RuleID = 1,
+                        Category = "Reward",
+                        Description = "Hoàn thành ngay lần đầu (0 reject)",
+                        IsActive = true,
+                        RuleName = "Reward_Perfect",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1659),
+                        Value = 20
+                    },
+                    new
+                    {
+                        RuleID = 2,
+                        Category = "Bonus",
+                        Description = "Thưởng thêm nếu RateComplete > 95%",
+                        IsActive = true,
+                        RuleName = "Bonus_HighRate",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1675),
+                        Value = 2
+                    },
+                    new
+                    {
+                        RuleID = 3,
+                        Category = "Penalty",
+                        Description = "Trừ điểm khi Approve ở lần sửa 2",
+                        IsActive = true,
+                        RuleName = "Penalty_Reject_2",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1676),
+                        Value = -5
+                    },
+                    new
+                    {
+                        RuleID = 4,
+                        Category = "Penalty",
+                        Description = "Trừ điểm khi Approve ở lần sửa 3",
+                        IsActive = true,
+                        RuleName = "Penalty_Reject_3",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1678),
+                        Value = -10
+                    },
+                    new
+                    {
+                        RuleID = 5,
+                        Category = "Penalty",
+                        Description = "Task bị Fail (Reject lần 4)",
+                        IsActive = true,
+                        RuleName = "Penalty_Task_Fail",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1679),
+                        Value = -20
+                    },
+                    new
+                    {
+                        RuleID = 6,
+                        Category = "Threshold",
+                        Description = "Ngưỡng >= 50đ",
+                        IsActive = true,
+                        RuleName = "High_Threshold",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1680),
+                        Value = 50
+                    },
+                    new
+                    {
+                        RuleID = 7,
+                        Category = "Threshold",
+                        Description = "Ngưỡng 20 - 50đ",
+                        IsActive = true,
+                        RuleName = "Low_Threshold",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1681),
+                        Value = 20
+                    },
+                    new
+                    {
+                        RuleID = 8,
+                        Category = "Limit",
+                        Description = "Max 3 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_High",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1682),
+                        Value = 3
+                    },
+                    new
+                    {
+                        RuleID = 9,
+                        Category = "Limit",
+                        Description = "Max 2 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_Normal",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1683),
+                        Value = 2
+                    },
+                    new
+                    {
+                        RuleID = 10,
+                        Category = "Limit",
+                        Description = "Max 1 task",
+                        IsActive = true,
+                        RuleName = "Max_Task_Warning",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1684),
+                        Value = 1
+                    },
+                    new
+                    {
+                        RuleID = 11,
+                        Category = "Limit",
+                        Description = "Số task Fail liên tiếp để Annotator bị khóa tài khoản",
+                        IsActive = true,
+                        RuleName = "Max_Consecutive_Fails",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1685),
+                        Value = 3
+                    },
+                    new
+                    {
+                        RuleID = 16,
+                        Category = "Limit",
+                        Description = "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản",
+                        IsActive = true,
+                        RuleName = "Max_Wrong_Disputed_Tasks_Streak",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1686),
+                        Value = 3
+                    },
+                    new
+                    {
+                        RuleID = 12,
+                        Category = "Penalty",
+                        Description = "Annotator khiếu nại sai (Dispute Rejected)",
+                        IsActive = true,
+                        RuleName = "Penalty_Annotator_Rejected_Dispute",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1687),
+                        Value = -5
+                    },
+                    new
+                    {
+                        RuleID = 13,
+                        Category = "Limit",
+                        Description = "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản",
+                        IsActive = true,
+                        RuleName = "Max_Disputed_Tasks_Streak",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1688),
+                        Value = 3
+                    },
+                    new
+                    {
+                        RuleID = 14,
+                        Category = "Penalty",
+                        Description = "Reviewer bắt lỗi sai (Dispute lost)",
+                        IsActive = true,
+                        RuleName = "Penalty_Reviewer_False_Check",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1689),
+                        Value = -10
+                    },
+                    new
+                    {
+                        RuleID = 15,
+                        Category = "Reward",
+                        Description = "Thưởng Reviewer reject 5 task liên tiếp không sai",
+                        IsActive = true,
+                        RuleName = "Reward_Reviewer_Perfect_Reject_Streak",
+                        UpdatedAt = new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1690),
+                        Value = 10
+                    });
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
-                {
-                    b.Property<int>("CommentID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("CommentID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CommentID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CommentID"));
 
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Comment")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("ErrorRegion")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("EvidenceImages")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("HistoryID")
-                        .HasColumnType("integer");
+                b.Property<int>("HistoryID")
+                    .HasColumnType("integer");
 
-                    b.HasKey("CommentID");
+                b.HasKey("CommentID");
 
-                    b.HasIndex("HistoryID");
+                b.HasIndex("HistoryID");
 
-                    b.ToTable("ReviewComments");
-                });
+                b.ToTable("ReviewComments");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewHistory", b =>
-                {
-                    b.Property<int>("HistoryID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("HistoryID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HistoryID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HistoryID"));
 
-                    b.Property<string>("Field")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Field")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("FinalResult")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("FinalResult")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("ReviewAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("ReviewAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid>("ReviewerID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ReviewerID")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("HistoryID");
+                b.HasKey("HistoryID");
 
-                    b.HasIndex("ReviewerID");
+                b.HasIndex("ReviewerID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.ToTable("ReviewHistories");
-                });
+                b.ToTable("ReviewHistories");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uuid");
 
-                    b.Property<double>("AvgReviewHours")
-                        .HasColumnType("double precision");
+                b.Property<double>("AvgReviewHours")
+                    .HasColumnType("double precision");
 
-                    b.Property<int>("CurrentPerfectRejectStreak")
-                        .HasColumnType("integer");
+                b.Property<int>("CurrentPerfectRejectStreak")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("DisputedTasksStreak")
-                        .HasColumnType("integer");
+                b.Property<int>("DisputedTasksStreak")
+                    .HasColumnType("integer");
 
-                    b.Property<double>("TotalReviewHours")
-                        .HasColumnType("double precision");
+                b.Property<double>("TotalReviewHours")
+                    .HasColumnType("double precision");
 
-                    b.Property<int>("TotalReviewedTasks")
-                        .HasColumnType("integer");
+                b.Property<int>("TotalReviewedTasks")
+                    .HasColumnType("integer");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.ToTable("ReviewerStats");
-                });
+                b.ToTable("ReviewerStats");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
-                {
-                    b.Property<int>("ConfigID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("ConfigID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ConfigID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ConfigID"));
 
-                    b.Property<Guid>("AdminID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("AdminID")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("AllowedFileTypes")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("AllowedFileTypes")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("MaxProjectStorageMB")
-                        .HasColumnType("integer");
+                b.Property<int>("MaxProjectStorageMB")
+                    .HasColumnType("integer");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("UpdatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Value")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("ConfigID");
+                b.HasKey("ConfigID");
 
-                    b.HasIndex("AdminID");
+                b.HasIndex("AdminID");
 
-                    b.ToTable("SystemConfigs");
-                });
+                b.ToTable("SystemConfigs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemLog", b =>
-                {
-                    b.Property<int>("LogID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("LogID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LogID"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LogID"));
 
-                    b.Property<string>("ActionType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("ActionType")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("EntityType")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("TargetID")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("TargetID")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("LogID");
+                b.HasKey("LogID");
 
-                    b.HasIndex("UserID");
+                b.HasIndex("UserID");
 
-                    b.ToTable("SystemLogs");
-                });
+                b.ToTable("SystemLogs");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.Property<Guid>("TaskID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("TaskID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AnnotatorID")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("AnnotatorID")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime?>("CompletedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CurrentRound")
-                        .HasColumnType("integer");
+                b.Property<int>("CurrentRound")
+                    .HasColumnType("integer");
 
-                    b.Property<DateTime>("Deadline")
-                        .HasColumnType("timestamp without time zone");
+                b.Property<DateTime>("Deadline")
+                    .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid>("ProjectID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ProjectID")
+                    .HasColumnType("uuid");
 
-                    b.Property<double>("RateComplete")
-                        .HasColumnType("double precision");
+                b.Property<double>("RateComplete")
+                    .HasColumnType("double precision");
 
-                    b.Property<Guid?>("ReviewerID")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("ReviewerID")
+                    .HasColumnType("uuid");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                b.Property<int>("Status")
+                    .HasColumnType("integer");
 
-                    b.Property<string>("TaskName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("TaskName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("TaskID");
+                b.HasKey("TaskID");
 
-                    b.HasIndex("AnnotatorID");
+                b.HasIndex("AnnotatorID");
 
-                    b.HasIndex("ProjectID");
+                b.HasIndex("ProjectID");
 
-                    b.HasIndex("ReviewerID");
+                b.HasIndex("ReviewerID");
 
-                    b.ToTable("Tasks");
-                });
+                b.ToTable("Tasks");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.Property<Guid>("ItemID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("ItemID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("DataID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("DataID")
+                    .HasColumnType("uuid");
 
-                    b.Property<bool>("IsFlagged")
-                        .HasColumnType("boolean");
+                b.Property<bool>("IsFlagged")
+                    .HasColumnType("boolean");
 
-                    b.Property<Guid>("TaskID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("TaskID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("ItemID");
+                b.HasKey("ItemID");
 
-                    b.HasIndex("DataID");
+                b.HasIndex("DataID");
 
-                    b.HasIndex("TaskID");
+                b.HasIndex("TaskID");
 
-                    b.ToTable("TaskItems");
-                });
+                b.ToTable("TaskItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
-                {
-                    b.Property<int>("IDDetail")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+            {
+                b.Property<int>("IDDetail")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IDDetail"));
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IDDetail"));
 
-                    b.Property<string>("AnnotationData")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("AnnotationData")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Content")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Field")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Field")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("boolean");
+                b.Property<bool>("IsApproved")
+                    .HasColumnType("boolean");
 
-                    b.Property<Guid>("TaskItemID")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("TaskItemID")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("IDDetail");
+                b.HasKey("IDDetail");
 
-                    b.HasIndex("TaskItemID");
+                b.HasIndex("TaskItemID");
 
-                    b.ToTable("TaskItemDetails");
-                });
+                b.ToTable("TaskItemDetails");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("UserID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<int>("CurrentTaskCount")
-                        .HasColumnType("integer");
+                b.Property<int>("CurrentTaskCount")
+                    .HasColumnType("integer");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Email")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Expertise")
-                        .HasColumnType("text");
+                b.Property<string>("Expertise")
+                    .HasColumnType("text");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("FullName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("GoogleAccountId")
-                        .HasColumnType("text");
+                b.Property<string>("GoogleAccountId")
+                    .HasColumnType("text");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                b.Property<bool>("IsActive")
+                    .HasColumnType("boolean");
 
-                    b.Property<string>("Password")
-                        .HasColumnType("text");
+                b.Property<string>("Password")
+                    .HasColumnType("text");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
+                b.Property<int>("Role")
+                    .HasColumnType("integer");
 
-                    b.Property<int>("Score")
-                        .HasColumnType("integer");
+                b.Property<int>("Score")
+                    .HasColumnType("integer");
 
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("UserName")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("UserID");
+                b.HasKey("UserID");
 
-                    b.HasIndex("UserName")
-                        .IsUnique();
+                b.HasIndex("UserName")
+                    .IsUnique();
 
-                    b.ToTable("Users");
-                });
+                b.ToTable("Users");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Performer")
-                        .WithMany()
-                        .HasForeignKey("PerformedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.User", "Performer")
+                    .WithMany()
+                    .HasForeignKey("PerformedBy")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.User", "TargetUser")
-                        .WithMany()
-                        .HasForeignKey("TargetUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.User", "TargetUser")
+                    .WithMany()
+                    .HasForeignKey("TargetUserId")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Performer");
+                b.Navigation("Performer");
 
-                    b.Navigation("TargetUser");
-                });
+                b.Navigation("TargetUser");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("AnnotatorStat")
-                        .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithOne("AnnotatorStat")
+                    .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("DataItems")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("DataItems")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Task");
+                b.Navigation("Task");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Manager")
-                        .WithMany()
-                        .HasForeignKey("ManagerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Manager")
+                    .WithMany()
+                    .HasForeignKey("ManagerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany()
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Manager");
+                b.Navigation("Manager");
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Manager")
-                        .WithMany("ManagedProjects")
-                        .HasForeignKey("ManagerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Manager")
+                    .WithMany("ManagedProjects")
+                    .HasForeignKey("ManagerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Manager");
-                });
+                b.Navigation("Manager");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ProjectLabel", b =>
-                {
-                    b.HasOne("SWP_BE.Models.Label", "Label")
-                        .WithMany()
-                        .HasForeignKey("LabelID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.Label", "Label")
+                    .WithMany()
+                    .HasForeignKey("LabelID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("ProjectLabels")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("ProjectLabels")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Label");
+                b.Navigation("Label");
 
-                    b.Navigation("Project");
-                });
+                b.Navigation("Project");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
-                        .WithMany()
-                        .HasForeignKey("RuleID")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
+                    .WithMany()
+                    .HasForeignKey("RuleID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany("ReputationLogs")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany("ReputationLogs")
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("AppliedRule");
+                b.Navigation("AppliedRule");
 
-                    b.Navigation("Task");
+                b.Navigation("Task");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
-                {
-                    b.HasOne("SWP_BE.Models.ReviewHistory", "ReviewHistory")
-                        .WithMany()
-                        .HasForeignKey("HistoryID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.ReviewHistory", "ReviewHistory")
+                    .WithMany()
+                    .HasForeignKey("HistoryID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("ReviewHistory");
-                });
+                b.Navigation("ReviewHistory");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewHistory", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Reviewer")
-                        .WithMany()
-                        .HasForeignKey("ReviewerID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Reviewer")
+                    .WithMany()
+                    .HasForeignKey("ReviewerID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany()
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Reviewer");
+                b.Navigation("Reviewer");
 
-                    b.Navigation("Task");
-                });
+                b.Navigation("Task");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("ReviewerStat")
-                        .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithOne("ReviewerStat")
+                    .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AdminID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "Admin")
+                    .WithMany()
+                    .HasForeignKey("AdminID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("Admin");
-                });
+                b.Navigation("Admin");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.SystemLog", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "Annotator")
-                        .WithMany("AnnotatorTasks")
-                        .HasForeignKey("AnnotatorID")
-                        .OnDelete(DeleteBehavior.Restrict);
+            {
+                b.HasOne("SWP_BE.Models.User", "Annotator")
+                    .WithMany("AnnotatorTasks")
+                    .HasForeignKey("AnnotatorID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany("Tasks")
-                        .HasForeignKey("ProjectID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Project", "Project")
+                    .WithMany("Tasks")
+                    .HasForeignKey("ProjectID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.User", "Reviewer")
-                        .WithMany("ReviewerTasks")
-                        .HasForeignKey("ReviewerID")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("SWP_BE.Models.User", "Reviewer")
+                    .WithMany("ReviewerTasks")
+                    .HasForeignKey("ReviewerID")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Annotator");
+                b.Navigation("Annotator");
 
-                    b.Navigation("Project");
+                b.Navigation("Project");
 
-                    b.Navigation("Reviewer");
-                });
+                b.Navigation("Reviewer");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.HasOne("SWP_BE.Models.DataItem", "DataItem")
-                        .WithMany()
-                        .HasForeignKey("DataID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.DataItem", "DataItem")
+                    .WithMany()
+                    .HasForeignKey("DataID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("SWP_BE.Models.Task", "Task")
-                        .WithMany("TaskItems")
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("SWP_BE.Models.Task", "Task")
+                    .WithMany("TaskItems")
+                    .HasForeignKey("TaskID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("DataItem");
+                b.Navigation("DataItem");
 
-                    b.Navigation("Task");
-                });
+                b.Navigation("Task");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
-                {
-                    b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
-                        .WithMany("TaskItemDetails")
-                        .HasForeignKey("TaskItemID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
+                    .WithMany("TaskItemDetails")
+                    .HasForeignKey("TaskItemID")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("TaskItem");
-                });
+                b.Navigation("TaskItem");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
-                {
-                    b.Navigation("DataItems");
+            {
+                b.Navigation("DataItems");
 
-                    b.Navigation("ProjectLabels");
+                b.Navigation("ProjectLabels");
 
-                    b.Navigation("Tasks");
-                });
+                b.Navigation("Tasks");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.Task", b =>
-                {
-                    b.Navigation("TaskItems");
-                });
+            {
+                b.Navigation("TaskItems");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
-                {
-                    b.Navigation("TaskItemDetails");
-                });
+            {
+                b.Navigation("TaskItemDetails");
+            });
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
-                {
-                    b.Navigation("AnnotatorStat");
+            {
+                b.Navigation("AnnotatorStat");
 
-                    b.Navigation("AnnotatorTasks");
+                b.Navigation("AnnotatorTasks");
 
-                    b.Navigation("ManagedProjects");
+                b.Navigation("ManagedProjects");
 
-                    b.Navigation("ReputationLogs");
+                b.Navigation("ReputationLogs");
 
-                    b.Navigation("ReviewerStat");
+                b.Navigation("ReviewerStat");
 
-                    b.Navigation("ReviewerTasks");
-                });
+                b.Navigation("ReviewerTasks");
+            });
 #pragma warning restore 612, 618
         }
     }
