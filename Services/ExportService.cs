@@ -1,13 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
 using System.IO.Compression;
-using System.IO.Compression;
-using System.Text;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json;
+using System.Security.Claims; // ĐÃ THÊM THƯ VIỆN NÀY ĐỂ LẤY TOKEN
 
 namespace SWP_BE.Services
 {
@@ -42,7 +39,7 @@ namespace SWP_BE.Services
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Không có task Approved");
+                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
 
             ValidateData(tasks);
 
@@ -73,12 +70,19 @@ namespace SWP_BE.Services
                 {
                     if (item.DataItem == null) continue;
 
-                    // Copy Image
-                    var imagePath = Path.Combine(Directory.GetCurrentDirectory(), item.DataItem.FilePath);
-                    if (File.Exists(imagePath))
+                    // Copy Image (Bọc try-catch để an toàn trên Azure)
+                    try
                     {
-                        var destImagePath = Path.Combine(imageFolder, item.DataItem.FileName);
-                        File.Copy(imagePath, destImagePath, true);
+                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), item.DataItem.FilePath);
+                        if (File.Exists(imagePath))
+                        {
+                            var destImagePath = Path.Combine(imageFolder, item.DataItem.FileName);
+                            File.Copy(imagePath, destImagePath, true);
+                        }
+                    }
+                    catch
+                    {
+                        // Nếu không tìm thấy file ảnh gốc trên server thì bỏ qua ảnh này
                     }
 
                     // Generate Label Text File
@@ -90,7 +94,6 @@ namespace SWP_BE.Services
                             var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
                             if (data == null) continue;
 
-                            // Chuyển đổi an toàn từ JsonElement sang các kiểu dữ liệu
                             int labelId = Convert.ToInt32(data["labelId"].ToString());
                             if (!labelMap.ContainsKey(labelId)) continue;
 
@@ -99,7 +102,6 @@ namespace SWP_BE.Services
                             double w = Convert.ToDouble(data["w"].ToString());
                             double h = Convert.ToDouble(data["h"].ToString());
 
-                            // Validate YOLO range
                             if (x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || h <= 0)
                                 continue;
 
@@ -107,7 +109,7 @@ namespace SWP_BE.Services
                         }
                         catch
                         {
-                            continue; // Bỏ qua annotation lỗi
+                            continue;
                         }
                     }
 
@@ -163,7 +165,7 @@ namespace SWP_BE.Services
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Không có task Approved");
+                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
 
             ValidateData(tasks);
 
@@ -196,8 +198,8 @@ namespace SWP_BE.Services
                     {
                         id = imageId,
                         file_name = item.DataItem.FileName,
-                        width = item.DataItem.Width,
-                        height = item.DataItem.Height
+                        width = item.DataItem.Width ?? 1,
+                        height = item.DataItem.Height ?? 1
                     });
 
                     foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
@@ -218,7 +220,6 @@ namespace SWP_BE.Services
                             var width = item.DataItem.Width ?? 1;
                             var height = item.DataItem.Height ?? 1;
 
-                            // Chuyển đổi từ tọa độ chuẩn hóa YOLO sang dạng pixel của COCO (x_min, y_min, w_pixel, h_pixel)
                             var cocoX = (x - w / 2) * width;
                             var cocoY = (y - h / 2) * height;
                             var cocoW = w * width;
@@ -277,26 +278,34 @@ namespace SWP_BE.Services
                 foreach (var item in task.TaskItems)
                 {
                     if (item.DataItem == null)
-                        throw new Exception($"Item {item.ItemID} thiếu DataItem");
+                        throw new Exception($"Item {item.ItemID} thiếu dữ liệu gốc (DataItem)");
 
-                    if (!item.TaskItemDetails.Any())
-                        throw new Exception($"Item {item.ItemID} chưa có annotation");
-
-                    if (item.DataItem.Width == null || item.DataItem.Height == null)
-                        continue;
+                    // Mình tạm thời COMMENT DÒNG NÀY LẠI vì đôi khi có những ảnh "trống" (background) không có nhãn
+                    // Nếu ném lỗi ở đây thì sẽ bị văng lỗi 400 cả cái Project.
+                    // if (!item.TaskItemDetails.Any())
+                    //     throw new Exception($"Item {item.ItemID} chưa có annotation");
                 }
             }
         }
+
+        // ==========================================
+        // ĐÃ FIX: HÀM LẤY ID MANAGER CHUẨN XÁC
+        // ==========================================
         private Guid GetManagerId()
         {
-            var userId = _httpContextAccessor
-                .HttpContext?
-                .User?
-                .FindFirst("UserID")?
-                .Value;
+            var user = _httpContextAccessor.HttpContext?.User;
 
-            return Guid.Parse(userId!);
+            // Tìm theo nhiều cách lưu Key khác nhau trong Token
+            var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                      ?? user?.FindFirst("id")?.Value
+                      ?? user?.FindFirst("sub")?.Value;
+
+            if (Guid.TryParse(userId, out var guidId))
+            {
+                return guidId;
+            }
+
+            throw new Exception("Hết cứu: Không thể trích xuất ID người dùng từ Token. Vui lòng đăng nhập lại.");
         }
-
     }
 }

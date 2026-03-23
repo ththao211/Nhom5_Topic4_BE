@@ -246,7 +246,22 @@ namespace SWP_BE.Controllers
             if (userId == Guid.Empty) return Unauthorized();
 
             var stats = await repService.GetAnnotatorStatsAsync(userId);
-            return stats != null ? Ok(stats) : NotFound("Chưa có dữ liệu thống kê.");
+            if (stats == null)
+            {
+                return Ok(new
+                {
+                    totalCompletedTasks = 0,
+                    firstTryApprovedTasks = 0,
+                    totalWorkingHours = 0,
+                    avgCompletionHours = 0,
+                    currentPerfectStreak = 0,
+                    rejectDisputedTasksStreak = 0,
+                    experience = 0,
+                    reputationPoints = 100 
+                });
+            }
+
+            return Ok(stats);
         }
 
     }

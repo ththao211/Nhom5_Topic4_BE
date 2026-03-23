@@ -3,6 +3,8 @@ using System.IO;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -70,7 +72,6 @@ namespace SWP_BE
                     }
                 });
 
-                // Lưu ý: Cần cấu hình tạo file XML comment trong file .csproj để dùng tính năng này
                 var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
@@ -96,6 +97,8 @@ namespace SWP_BE
             builder.Services.AddScoped<SuggestionService>();
             builder.Services.AddScoped<SWP_BE.Repositories.SuggestionRepository>();
             builder.Services.AddScoped<ExportService>();
+            builder.Services.AddHttpContextAccessor();
+
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -117,17 +120,24 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // Cấu hình Middleware
-            if (app.Environment.IsDevelopment())
+            // ===== FIX LỖI 500: BẮT LỖI TOÀN CỤC VÀ TRẢ VỀ JSON =====
+            app.UseExceptionHandler(c => c.Run(async context =>
             {
-                app.UseDeveloperExceptionPage();
-            }
+                var exception = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    Loi_Chinh_Xac = exception?.Message,
+                    Chi_Tiet = exception?.InnerException?.Message
+                });
+            }));
 
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                options.RoutePrefix = string.Empty; // Hiển thị Swagger ở trang chủ ("/")
+                options.RoutePrefix = string.Empty;
             });
 
             // Xử lý custom message cho các lỗi HTTP (như 401, 403, 404)
@@ -136,12 +146,15 @@ namespace SWP_BE
                 context.HttpContext.Response.ContentType = "application/json";
                 var code = context.HttpContext.Response.StatusCode;
 
-                // Tránh ghi đè file tĩnh hoặc swagger nếu lỡ bị bắt nhầm
-                await context.HttpContext.Response.WriteAsJsonAsync(new
+                // Đoạn này mình thêm check khác 500 để không đè lên cái ExceptionHandler ở trên
+                if (code != 500)
                 {
-                    message = code == 404 ? "Không tìm thấy endpoint hoặc tài nguyên" : "Lỗi hệ thống hoặc không có quyền",
-                    statusCode = code
-                });
+                    await context.HttpContext.Response.WriteAsJsonAsync(new
+                    {
+                        message = code == 404 ? "Không tìm thấy endpoint hoặc tài nguyên" : "Lỗi hệ thống hoặc không có quyền",
+                        statusCode = code
+                    });
+                }
             });
 
             app.UseStaticFiles();
