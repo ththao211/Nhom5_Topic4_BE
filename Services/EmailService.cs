@@ -68,7 +68,7 @@ namespace SWP_BE.Services
             var token = GenerateResetToken(toEmail);
 
             // đổi domain frontend 
-            var link = $"http://localhost:3000/reset-password?token={token}";
+            var link = $"http://localhost:5173/reset-pass?token={token}";
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(senderName, senderEmail));

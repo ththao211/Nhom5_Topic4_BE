@@ -83,6 +83,8 @@ namespace SWP_BE.Controllers
 
             var task = await _context.Tasks
                 .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectLabels)
+                        .ThenInclude(pl => pl.Label)
                 .Include(t => t.TaskItems).ThenInclude(i => i.DataItem)
                 .Include(t => t.TaskItems).ThenInclude(i => i.TaskItemDetails)
                 .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
@@ -91,22 +93,35 @@ namespace SWP_BE.Controllers
 
             return Ok(new
             {
-                task.TaskID,
-                task.TaskName,
+                TaskID = task.TaskID,
+                TaskName = task.TaskName,
                 ProjectName = task.Project?.ProjectName,
                 Status = task.Status.ToString(),
-                task.CurrentRound,
-                task.RateComplete,
+                Deadline = task.Deadline,
+                Guideline = task.Project?.GuidelineUrl ?? "", 
+                CurrentRound = task.CurrentRound,
+                RateComplete = task.RateComplete,
+
+                AvailableLabels = task.Project?.ProjectLabels?
+                    .Where(pl => pl.Label != null && !string.IsNullOrEmpty(pl.Label.LabelName))
+                    .Select(pl => (object)new
+                    {
+                        Name = !string.IsNullOrEmpty(pl.CustomName) ? pl.CustomName : pl.Label.LabelName,
+                        Color = !string.IsNullOrEmpty(pl.Label.DefaultColor) ? pl.Label.DefaultColor : "#ffffff"
+                    })
+                    .ToList() ?? new List<object>(),
+
                 Items = task.TaskItems.Select(i => new {
-                    i.ItemID,
-                    i.DataItem.FilePath,
-                    i.DataItem.FileName,
+                    ItemID = i.ItemID,
+                    FileName = i.DataItem?.FileName ?? "Unknown File",
+                    FilePath = i.DataItem?.FilePath ?? "",
+                    IsFlagged = i.IsFlagged,
                     Annotations = i.TaskItemDetails.Select(d => new {
-                        d.IDDetail,
-                        d.AnnotationData,
-                        d.Content,
-                        d.Field,
-                        d.IsApproved
+                        IDDetail = d.IDDetail,
+                        AnnotationData = d.AnnotationData,
+                        Content = d.Content,
+                        Field = d.Field,
+                        IsApproved = d.IsApproved
                     })
                 })
             });
@@ -147,9 +162,6 @@ namespace SWP_BE.Controllers
             if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
                 return BadRequest("Thao tác không hợp lệ.");
 
-            // Chụp lại tỷ lệ lần đầu nếu Approve ngay vòng 1 để làm bằng chứng thưởng 2đ
-            if (task.CurrentRound == 1) task.FirstRate = task.RateComplete;
-
             task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
             task.CompletedAt = DateTime.UtcNow;
 
@@ -182,8 +194,6 @@ namespace SWP_BE.Controllers
             if (string.IsNullOrWhiteSpace(feedback.Comment))
                 return BadRequest("Vui lòng nhập lý do từ chối.");
 
-            // Chụp lại tỷ lệ vòng 1 khi bị Reject lần đầu
-            if (task.CurrentRound == 1) task.FirstRate = task.RateComplete;
 
             // Nếu đã tới lượt nộp thứ 4 mà vẫn sai -> Đánh FAIL và tạo Task mới cho Manager
             if (task.CurrentRound == 4)
@@ -206,7 +216,6 @@ namespace SWP_BE.Controllers
                     Status = SWP_BE.Models.Task.TaskStatus.New,
                     CurrentRound = 0,
                     RateComplete = 0,
-                    FirstRate = null,
                     AnnotatorID = null, // Manager sẽ gán người mới
                     ReviewerID = null,  // Manager sẽ gán reviewer mới
                     Deadline = DateTime.UtcNow.AddDays(3),
@@ -227,7 +236,9 @@ namespace SWP_BE.Controllers
             else
             {
                 // Trả về trạng thái Rejected để Annotator sửa tiếp
+                task.CurrentRound++;
                 task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
+                await _reputationService.HandleTaskRejectionAsync(task.AnnotatorID.Value, reviewerId);
 
                 if (task.AnnotatorID.HasValue)
                 {

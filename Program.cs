@@ -18,6 +18,9 @@ namespace SWP_BE
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // ===== THÊM DÒNG NÀY ĐỂ FIX LỖI DATETIME CỦA POSTGRESQL =====
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             // 1. Cấu hình CORS
             builder.Services.AddCors(options =>
             {
@@ -30,7 +33,6 @@ namespace SWP_BE
             });
 
             // ===== DB Connection (ĐÃ ĐỔI SANG SUPABASE - POSTGRESQL) =====
-            // Sửa UseSqlServer thành UseNpgsql ở đây
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -91,6 +93,8 @@ namespace SWP_BE
             builder.Services.AddScoped<ReputationService>();
             builder.Services.AddScoped<IProgressService, ProgressService>();
             builder.Services.AddScoped<IReviewerRepository, ReviewerRepository>();
+            builder.Services.AddScoped<SuggestionService>();
+            builder.Services.AddScoped<SWP_BE.Repositories.SuggestionRepository>();
             builder.Services.AddScoped<ExportService>();
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

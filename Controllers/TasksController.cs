@@ -67,7 +67,6 @@ namespace SWP_BE.Controllers
                     t.Deadline,
                     t.ProjectID,
                     t.CurrentRound,
-                    t.SubmissionRate,
                     t.RateComplete
                 })
                 .ToListAsync();

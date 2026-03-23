@@ -288,7 +288,6 @@ namespace SWP_BE.Controllers
 
             return Ok("Password reset successfully");
         }
-
         [HttpPost("reset-password-by-token")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -303,39 +302,39 @@ namespace SWP_BE.Controllers
 
                 var principal = tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidAudience = _configuration["Jwt:Audience"],
+                    ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
+
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidateAudience = false,
+
+                    ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 }, out _);
+ 
+                var email = principal.FindFirst(ClaimTypes.Email)?.Value;
 
-                var userId = principal.FindFirst("userId")?.Value;
+                if (string.IsNullOrEmpty(email))
+                    return BadRequest(new { message = "Token không chứa email hợp lệ." });
 
-                if (userId == null)
-                    return BadRequest("Invalid token");
-
-                var user = await _context.Users.FindAsync(Guid.Parse(userId));
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
                 if (user == null)
-                    return NotFound();
-
-                // đổi password
+                    return NotFound(new { message = "Không tìm thấy người dùng." });
                 user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-
+                PasswordResetStore.ResetTokens.Remove(user.Email);
                 await _context.SaveChangesAsync();
 
-                return Ok("Password set successfully");
+                return Ok(new { message = "Đổi mật khẩu thành công!" });
             }
             catch (SecurityTokenExpiredException)
             {
-                return BadRequest("Token expired"); 
+                return BadRequest(new { message = "Link đổi mật khẩu đã hết hạn (quá 10 phút)." });
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest("Invalid token");
+                return BadRequest(new { message = "Link không hợp lệ hoặc đã bị chỉnh sửa.", detail = ex.Message });
             }
         }
 

@@ -51,13 +51,6 @@ namespace SWP_BE.Services
                 .Count(i =>
                  i.TaskItemDetails.Any() &&
                  i.TaskItemDetails.All(d => d.IsApproved));
-
-            // ==============================
-            // Annotator Progress
-            // ==============================
-
-            task.SubmissionRate = (double)annotatedItems / totalItems * 100;
-
             // ==============================
             // Final Progress (Reviewer)
             // ==============================

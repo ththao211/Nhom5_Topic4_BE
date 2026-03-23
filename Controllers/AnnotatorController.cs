@@ -209,6 +209,22 @@ namespace SWP_BE.Controllers
         }
 
         /// <summary>
+        /// 8.1 Lấy danh sách lịch sử khiếu nại của chính Annotator
+        /// </summary>
+        /// <remarks>
+        /// Dùng để hiển thị trạng thái khiếu nại (Pending/Accepted/Rejected) và lời nhắn của Manager
+        /// </remarks>
+        [HttpGet("annotator/disputes")]
+        public async Task<IActionResult> GetMyDisputes()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized("Token không hợp lệ.");
+
+            var disputes = await _service.GetMyDisputes(userId);
+            return Ok(disputes);
+        }
+
+        /// <summary>
         /// 9. Lấy thông tin điểm tín nhiệm (Reputation)
         /// </summary>
         /// <remarks>
