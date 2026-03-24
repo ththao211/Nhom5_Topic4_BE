@@ -8,7 +8,6 @@ using System;
 using System.Security.Claims;
 
 namespace SWP_BE.Controllers
-    
 {
     [Authorize]
     [ApiController]
@@ -168,6 +167,11 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
 
+            var task = await _context.Tasks.FindAsync(taskId);
+            if (task == null) return NotFound("Không tìm thấy Task");
+
+            task.Status = SWP_BE.Models.Task.TaskStatus.Disputed;
+
             // 1. Tạo Dispute
             var dispute = new Dispute
             {
@@ -205,7 +209,7 @@ namespace SWP_BE.Controllers
             _context.ReviewComments.Add(comment);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Dispute created with evidence" });
+            return Ok(new { message = "Đã gửi khiếu nại và Task đã bị khóa." });
         }
 
         /// <summary>
@@ -257,12 +261,11 @@ namespace SWP_BE.Controllers
                     currentPerfectStreak = 0,
                     rejectDisputedTasksStreak = 0,
                     experience = 0,
-                    reputationPoints = 100 
+                    reputationPoints = 100
                 });
             }
 
             return Ok(stats);
         }
-
     }
 }

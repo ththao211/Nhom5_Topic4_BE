@@ -4,7 +4,7 @@ using SWP_BE.Models;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using System.Security.Claims; // ĐÃ THÊM THƯ VIỆN NÀY ĐỂ LẤY TOKEN
+using System.Security.Claims;
 
 namespace SWP_BE.Services
 {
@@ -45,13 +45,11 @@ namespace SWP_BE.Services
 
             var project = tasks.First().Project;
 
-            // ===== LABEL MAP =====
             var labelMap = project.ProjectLabels
                 .GroupBy(pl => pl.LabelID)
                 .Select((g, index) => new { LabelID = g.Key, index })
                 .ToDictionary(x => x.LabelID, x => x.index);
 
-            // ===== TEMP FOLDER =====
             var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var imageFolder = Path.Combine(tempFolder, "images");
             var labelFolder = Path.Combine(tempFolder, "labels");
@@ -60,7 +58,6 @@ namespace SWP_BE.Services
             Directory.CreateDirectory(imageFolder);
             Directory.CreateDirectory(labelFolder);
 
-            // ===== classes.txt =====
             var classNames = project.ProjectLabels.Select(pl => pl.CustomName ?? pl.Label.LabelName);
             await File.WriteAllLinesAsync(Path.Combine(tempFolder, "classes.txt"), classNames);
 
@@ -70,7 +67,6 @@ namespace SWP_BE.Services
                 {
                     if (item.DataItem == null) continue;
 
-                    // Copy Image (Bọc try-catch để an toàn trên Azure)
                     try
                     {
                         var imagePath = Path.Combine(Directory.GetCurrentDirectory(), item.DataItem.FilePath);
@@ -80,14 +76,12 @@ namespace SWP_BE.Services
                             File.Copy(imagePath, destImagePath, true);
                         }
                     }
-                    catch
-                    {
-                        // Nếu không tìm thấy file ảnh gốc trên server thì bỏ qua ảnh này
-                    }
+                    catch { }
 
-                    // Generate Label Text File
                     var lines = new List<string>();
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
+
+                    // 🔥 ĐÃ SỬA: Lọc theo IsApproved == "True" (Chuỗi string)
+                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved == "True"))
                     {
                         try
                         {
@@ -107,10 +101,7 @@ namespace SWP_BE.Services
 
                             lines.Add($"{labelMap[labelId]} {x} {y} {w} {h}");
                         }
-                        catch
-                        {
-                            continue;
-                        }
+                        catch { }
                     }
 
                     if (lines.Any())
@@ -122,17 +113,13 @@ namespace SWP_BE.Services
                 }
             }
 
-            // ===== ZIP =====
             var zipPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
             ZipFile.CreateFromDirectory(tempFolder, zipPath);
 
             var bytes = await File.ReadAllBytesAsync(zipPath);
 
             var managerId = GetManagerId();
-
-            var itemCount = tasks
-                .SelectMany(t => t.TaskItems)
-                .Count();
+            var itemCount = tasks.SelectMany(t => t.TaskItems).Count();
 
             _context.ExportHistories.Add(new ExportHistory
             {
@@ -202,7 +189,8 @@ namespace SWP_BE.Services
                         height = item.DataItem.Height ?? 1
                     });
 
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
+                    // 🔥 ĐÃ SỬA: Lọc theo IsApproved == "True" (Chuỗi string)
+                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved == "True"))
                     {
                         try
                         {
@@ -249,10 +237,7 @@ namespace SWP_BE.Services
             });
 
             var managerId = GetManagerId();
-
-            var itemCount = tasks
-                .SelectMany(t => t.TaskItems)
-                .Count();
+            var itemCount = tasks.SelectMany(t => t.TaskItems).Count();
 
             _context.ExportHistories.Add(new ExportHistory
             {
@@ -268,9 +253,6 @@ namespace SWP_BE.Services
             return (Encoding.UTF8.GetBytes(json), "coco_export.json");
         }
 
-        // ==========================================
-        // VALIDATION
-        // ==========================================
         private void ValidateData(List<Models.Task> tasks)
         {
             foreach (var task in tasks)
@@ -279,23 +261,13 @@ namespace SWP_BE.Services
                 {
                     if (item.DataItem == null)
                         throw new Exception($"Item {item.ItemID} thiếu dữ liệu gốc (DataItem)");
-
-                    // Mình tạm thời COMMENT DÒNG NÀY LẠI vì đôi khi có những ảnh "trống" (background) không có nhãn
-                    // Nếu ném lỗi ở đây thì sẽ bị văng lỗi 400 cả cái Project.
-                    // if (!item.TaskItemDetails.Any())
-                    //     throw new Exception($"Item {item.ItemID} chưa có annotation");
                 }
             }
         }
 
-        // ==========================================
-        // ĐÃ FIX: HÀM LẤY ID MANAGER CHUẨN XÁC
-        // ==========================================
         private Guid GetManagerId()
         {
             var user = _httpContextAccessor.HttpContext?.User;
-
-            // Tìm theo nhiều cách lưu Key khác nhau trong Token
             var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                       ?? user?.FindFirst("id")?.Value
                       ?? user?.FindFirst("sub")?.Value;

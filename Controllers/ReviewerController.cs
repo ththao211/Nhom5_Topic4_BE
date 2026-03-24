@@ -41,9 +41,6 @@ namespace SWP_BE.Controllers
             _reviewerRepository = reviewerRepository;
         }
 
-        // ============================================================
-        // 1. LẤY DANH SÁCH TASK CỦA REVIEWER
-        // ============================================================
         [HttpGet("tasks")]
         public async Task<IActionResult> GetReviewerTasks([FromQuery] string? status)
         {
@@ -73,9 +70,6 @@ namespace SWP_BE.Controllers
             return Ok(tasks);
         }
 
-        // ============================================================
-        // 2. XEM CHI TIẾT TASK ĐỂ CHẤM ĐIỂM
-        // ============================================================
         [HttpGet("tasks/{taskId}")]
         public async Task<IActionResult> GetTaskDetail(Guid taskId)
         {
@@ -121,7 +115,7 @@ namespace SWP_BE.Controllers
                         AnnotationData = d.AnnotationData,
                         Content = d.Content,
                         Field = d.Field,
-                        IsApproved = d.IsApproved
+                        IsApproved = d.IsApproved 
                     })
                 })
             });
@@ -131,7 +125,7 @@ namespace SWP_BE.Controllers
         // 3. DUYỆT TỪNG NHÃN (ĐÚNG/SAI)
         // ============================================================
         [HttpPatch("item-detail/{id}/check")]
-        public async Task<IActionResult> ReviewItemDetail(int id, [FromQuery] bool isApproved)
+        public async Task<IActionResult> ReviewItemDetail(int id, [FromQuery] string isApproved) 
         {
             var detail = await _context.TaskItemDetails.FindAsync(id);
             if (detail == null) return NotFound();
@@ -144,15 +138,11 @@ namespace SWP_BE.Controllers
                 .Select(i => i.TaskID)
                 .FirstOrDefaultAsync();
 
-            // Cập nhật RateComplete thực tế của Task ngay lập tức
             await _progressService.UpdateTaskAndProject(taskId);
 
-            return Ok(new { message = isApproved ? "Đã đánh dấu ĐÚNG" : "Đã đánh dấu SAI" });
+            return Ok(new { message = isApproved == "True" ? "Đã đánh dấu ĐÚNG" : "Đã đánh dấu SAI" });
         }
 
-        // ============================================================
-        // 4. APPROVE (CHỐT DUYỆT TASK)
-        // ============================================================
         [HttpPost("tasks/{taskId}/approve")]
         public async Task<IActionResult> Approve(Guid taskId)
         {
@@ -176,9 +166,6 @@ namespace SWP_BE.Controllers
             return Ok("Task Approved thành công.");
         }
 
-        // ============================================================
-        // 5. REJECT (TỪ CHỐI BÀI LÀM)
-        // ============================================================
         [HttpPost("tasks/{taskId}/reject")]
         public async Task<IActionResult> Reject(Guid taskId, [FromBody] FeedbackDTO feedback)
         {
@@ -194,8 +181,6 @@ namespace SWP_BE.Controllers
             if (string.IsNullOrWhiteSpace(feedback.Comment))
                 return BadRequest("Vui lòng nhập lý do từ chối.");
 
-
-            // Nếu đã tới lượt nộp thứ 4 mà vẫn sai -> Đánh FAIL và tạo Task mới cho Manager
             if (task.CurrentRound == 4)
             {
                 task.Status = SWP_BE.Models.Task.TaskStatus.Fail;
@@ -207,7 +192,6 @@ namespace SWP_BE.Controllers
                     await _notificationService.NotifyTaskRejected(task.AnnotatorID.Value, task.TaskName, "Task bị FAIL do sai quá 3 lần.");
                 }
 
-                // TẠO BẢN SAO MỚI (Reset mọi thông số cho người mới)
                 var clonedTask = new SWP_BE.Models.Task
                 {
                     TaskID = Guid.NewGuid(),
@@ -216,18 +200,16 @@ namespace SWP_BE.Controllers
                     Status = SWP_BE.Models.Task.TaskStatus.New,
                     CurrentRound = 0,
                     RateComplete = 0,
-                    AnnotatorID = null, // Manager sẽ gán người mới
-                    ReviewerID = null,  // Manager sẽ gán reviewer mới
+                    AnnotatorID = null,
+                    ReviewerID = null,
                     Deadline = DateTime.UtcNow.AddDays(3),
                     CreatedAt = DateTime.UtcNow,
 
-                    // Sửa lỗi: Dùng đúng tên biến DataID từ Model TaskItem của bạn
                     TaskItems = task.TaskItems.Select(ti => new TaskItem
                     {
                         ItemID = Guid.NewGuid(),
                         DataID = ti.DataID,
                         IsFlagged = false,
-                        // Khởi tạo List rỗng để AnnotatorService.SaveAnnotation không bị lỗi Null
                         TaskItemDetails = new List<TaskItemDetail>()
                     }).ToList()
                 };
@@ -235,7 +217,6 @@ namespace SWP_BE.Controllers
             }
             else
             {
-                // Trả về trạng thái Rejected để Annotator sửa tiếp
                 task.CurrentRound++;
                 task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
                 await _reputationService.HandleTaskRejectionAsync(task.AnnotatorID.Value, reviewerId);
@@ -252,9 +233,6 @@ namespace SWP_BE.Controllers
             return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : "Task đã được chuyển về trạng thái REJECTED");
         }
 
-        // ============================================================
-        // XEM ĐIỂM TÍN NHIỆM (REPUTATION) CỦA REVIEWER
-        // ============================================================
         [HttpGet("reputation")]
         public async Task<IActionResult> GetReputation()
         {
@@ -289,9 +267,8 @@ namespace SWP_BE.Controllers
                 var result = await _reviewerRepository.GetReviewerDisputes(reviewerId);
                 return Ok(result);
             }
-            catch (Exception ex) // Bắt gọn lỗi tại đây
+            catch (Exception ex)
             {
-                // Trả về lỗi chi tiết để xem trên Postman hoặc Swagger
                 return StatusCode(500, new
                 {
                     Error = ex.Message,
@@ -301,9 +278,6 @@ namespace SWP_BE.Controllers
             }
         }
 
-        // ============================================================
-        // HÀM LẤY ID NGƯỜI DÙNG HIỆN TẠI TỪ TOKEN
-        // ============================================================
         private Guid GetCurrentUserId()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

@@ -6,15 +6,142 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class updatenew : Migration
+    public partial class ChangeIsApprovedToString : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "ErrorRegion",
-                table: "ReviewComments",
-                newName: "EvidenceImages");
+            migrationBuilder.AlterColumn<string>(
+                name: "IsApproved",
+                table: "TaskItemDetails",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 1,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2634));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 2,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2648));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 3,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2649));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 4,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2650));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 5,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2651));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 6,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2652));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 7,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2653));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 8,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2654));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 9,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2655));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 10,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2656));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 11,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2657));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 12,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2659));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 13,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2660));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 14,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2661));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 15,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2662));
+
+            migrationBuilder.UpdateData(
+                table: "ReputationRules",
+                keyColumn: "RuleID",
+                keyValue: 16,
+                column: "UpdatedAt",
+                value: new DateTime(2026, 3, 24, 1, 14, 34, 783, DateTimeKind.Local).AddTicks(2658));
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsApproved",
+                table: "TaskItemDetails",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
 
             migrationBuilder.UpdateData(
                 table: "ReputationRules",
@@ -127,127 +254,6 @@ namespace SWP_BE.Migrations
                 keyValue: 16,
                 column: "UpdatedAt",
                 value: new DateTime(2026, 3, 20, 11, 31, 47, 785, DateTimeKind.Local).AddTicks(3398));
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.RenameColumn(
-                name: "EvidenceImages",
-                table: "ReviewComments",
-                newName: "ErrorRegion");
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 1,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3827));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 2,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3837));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 3,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3838));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 4,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3840));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 5,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3862));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 6,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3864));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 7,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3865));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 8,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3866));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 9,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3867));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 10,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3868));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 11,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3868));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 12,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3870));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 13,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3871));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 14,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3872));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 15,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3873));
-
-            migrationBuilder.UpdateData(
-                table: "ReputationRules",
-                keyColumn: "RuleID",
-                keyValue: 16,
-                column: "UpdatedAt",
-                value: new DateTime(2026, 3, 20, 10, 39, 58, 13, DateTimeKind.Local).AddTicks(3869));
         }
     }
 }
