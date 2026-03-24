@@ -115,17 +115,14 @@ namespace SWP_BE.Controllers
                         AnnotationData = d.AnnotationData,
                         Content = d.Content,
                         Field = d.Field,
-                        IsApproved = d.IsApproved 
+                        IsApproved = d.IsApproved
                     })
                 })
             });
         }
 
-        // ============================================================
-        // 3. DUYỆT TỪNG NHÃN (ĐÚNG/SAI)
-        // ============================================================
         [HttpPatch("item-detail/{id}/check")]
-        public async Task<IActionResult> ReviewItemDetail(int id, [FromQuery] string isApproved) 
+        public async Task<IActionResult> ReviewItemDetail(int id, [FromQuery] string isApproved)
         {
             var detail = await _context.TaskItemDetails.FindAsync(id);
             if (detail == null) return NotFound();
@@ -276,6 +273,33 @@ namespace SWP_BE.Controllers
                     StackTrace = ex.StackTrace
                 });
             }
+        }
+
+        [HttpGet("my-stats")]
+        public async Task<IActionResult> GetMyStats()
+        {
+            var reviewerId = GetCurrentUserId();
+            if (reviewerId == Guid.Empty) return Unauthorized();
+
+            var user = await _context.Users
+                .Where(u => u.UserID == reviewerId)
+                .Select(u => new { u.Score })
+                .FirstOrDefaultAsync();
+
+            if (user == null) return NotFound("Người dùng không tồn tại.");
+            var stats = await _context.ReviewerStats
+                .FirstOrDefaultAsync(s => s.UserID == reviewerId);
+
+            return Ok(new
+            {
+                totalReviewedTasks = stats?.TotalReviewedTasks ?? 0,
+                totalReviewHours = stats?.TotalReviewHours ?? 0,
+                avgReviewHours = stats?.AvgReviewHours ?? 0,
+                currentPerfectRejectStreak = stats?.CurrentPerfectRejectStreak ?? 0,
+                disputedTasksStreak = stats?.DisputedTasksStreak ?? 0,
+                experience = 0, 
+                reputationPoints = user.Score
+            });
         }
 
         private Guid GetCurrentUserId()
