@@ -238,6 +238,31 @@ namespace SWP_BE.Controllers
             return data != null ? Ok(data) : NotFound("Không thấy dữ liệu.");
         }
 
+        //API bổ sung: Lấy thống kê chi tiết về hiệu suất làm việc của Annotator (số Task đã hoàn thành, tỷ lệ bị reject, điểm trung bình mỗi Task...)
+        [HttpGet("annotator/my-stats")]
+        public async Task<IActionResult> GetMyStats([FromServices] ReputationService repService)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized();
+
+            var stats = await repService.GetAnnotatorStatsAsync(userId);
+            if (stats == null)
+            {
+                return Ok(new
+                {
+                    totalCompletedTasks = 0,
+                    firstTryApprovedTasks = 0,
+                    totalWorkingHours = 0,
+                    avgCompletionHours = 0,
+                    currentPerfectStreak = 0,
+                    rejectDisputedTasksStreak = 0,
+                    experience = 0,
+                    reputationPoints = 100 
+                });
+            }
+
+            return Ok(stats);
+        }
 
     }
 }

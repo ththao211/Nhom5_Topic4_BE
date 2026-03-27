@@ -98,7 +98,7 @@ namespace SWP_BE.Controllers
                 ProjectName = task.Project?.ProjectName,
                 Status = task.Status.ToString(),
                 Deadline = task.Deadline,
-                Guideline = task.Project?.GuidelineUrl ?? "", 
+                Guideline = task.Project?.GuidelineUrl ?? "",
                 CurrentRound = task.CurrentRound,
                 RateComplete = task.RateComplete,
 
@@ -251,16 +251,59 @@ namespace SWP_BE.Controllers
 
             return Ok(task.Status == SWP_BE.Models.Task.TaskStatus.Fail ? "Task đã bị đánh FAIL" : "Task đã được chuyển về trạng thái REJECTED");
         }
-        [HttpGet("disputes")]
-        public async Task<IActionResult> GetReviewerDisputes()
+
+        // ============================================================
+        // XEM ĐIỂM TÍN NHIỆM (REPUTATION) CỦA REVIEWER
+        // ============================================================
+        [HttpGet("reputation")]
+        public async Task<IActionResult> GetReputation()
         {
             var reviewerId = GetCurrentUserId();
 
-            var result = await _reviewerRepository.GetReviewerDisputes(reviewerId);
+            var user = await _context.Users
+                .Include(u => u.ReputationLogs)
+                .FirstOrDefaultAsync(u => u.UserID == reviewerId);
 
-            return Ok(result);
+            if (user == null) return NotFound("Không tìm thấy dữ liệu.");
+
+            return Ok(new
+            {
+                CurrentScore = user.Score,
+                Logs = user.ReputationLogs
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Select(l => new
+                    {
+                        l.ScoreChange,
+                        l.Reason,
+                        l.CreatedAt
+                    }).ToList()
+            });
         }
 
+        [HttpGet("disputes")]
+        public async Task<IActionResult> GetReviewerDisputes()
+        {
+            try
+            {
+                var reviewerId = GetCurrentUserId();
+                var result = await _reviewerRepository.GetReviewerDisputes(reviewerId);
+                return Ok(result);
+            }
+            catch (Exception ex) // Bắt gọn lỗi tại đây
+            {
+                // Trả về lỗi chi tiết để xem trên Postman hoặc Swagger
+                return StatusCode(500, new
+                {
+                    Error = ex.Message,
+                    InnerError = ex.InnerException?.Message,
+                    StackTrace = ex.StackTrace
+                });
+            }
+        }
+
+        // ============================================================
+        // HÀM LẤY ID NGƯỜI DÙNG HIỆN TẠI TỪ TOKEN
+        // ============================================================
         private Guid GetCurrentUserId()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

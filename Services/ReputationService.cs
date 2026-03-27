@@ -2,6 +2,7 @@
 using SWP_BE.Data;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
+using static UpdateRuleDto;
 
 namespace SWP_BE.Services
 {
@@ -327,6 +328,42 @@ namespace SWP_BE.Services
             await _repo.SaveChangesAsync();
 
             return (true, $"Đã cập nhật thành công luật: {rule.RuleName}");
+        }
+        // Trong ReputationService.cs
+
+        public async Task<AnnotatorStatsDto?> GetAnnotatorStatsAsync(Guid userId)
+        {
+            var stats = await _context.AnnotatorStats
+                .FirstOrDefaultAsync(s => s.UserID == userId);
+
+            if (stats == null) return null;
+
+            return new AnnotatorStatsDto
+            {
+                TotalCompletedTasks = stats.TotalCompletedTasks,
+                FirstTryApprovedTasks = stats.FirstTryApprovedTasks,
+                TotalWorkingHours = Math.Round(stats.TotalWorkingHours, 2),
+                AvgCompletionHours = Math.Round(stats.AvgCompletionHours, 2),
+                CurrentPerfectStreak = stats.CurrentPerfectStreak,
+                RejectDisputedTasksStreak = stats.RejectDisputedTasksStreak
+            };
+        }
+
+        public async Task<ReviewerStatsDto?> GetReviewerStatsAsync(Guid userId)
+        {
+            var stats = await _context.ReviewerStats
+                .FirstOrDefaultAsync(s => s.UserID == userId);
+
+            if (stats == null) return null;
+
+            return new ReviewerStatsDto
+            {
+                TotalReviewedTasks = stats.TotalReviewedTasks,
+                TotalReviewHours = Math.Round(stats.TotalReviewHours, 2),
+                AvgReviewHours = Math.Round(stats.AvgReviewHours, 2),
+                DisputedTasksStreak = stats.DisputedTasksStreak,
+                CurrentPerfectRejectStreak = stats.CurrentPerfectRejectStreak
+            };
         }
     }
 }
