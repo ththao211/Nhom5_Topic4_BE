@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace SWP_BE.DTOs
 {
+
     // THÊM MỚI: Class chứa thông tin Tên và Màu của nhãn
     public class LabelInfoDto
     {

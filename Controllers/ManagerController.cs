@@ -379,5 +379,71 @@ namespace SWP_BE.Controllers
                 return BadRequest(new { message = "Export COCO thất bại", error = ex.Message });
             }
         }
+        [Authorize(Roles = "Manager")]
+        [HttpGet("projects/{projectId}/missing-label-reports")]
+        public async Task<IActionResult> GetMissingLabelReports(Guid projectId)
+        {
+            var managerId = GetManagerId();
+
+            var reports = await _context.Disputes
+                .Include(d => d.User)
+                .Include(d => d.Task)
+                .Where(d =>
+                    d.Task.ProjectID == projectId &&
+                    d.Task.Project.ManagerID == managerId)
+                .Select(d => new
+                {
+                    d.DisputeID,
+                    TaskName = d.Task.TaskName,
+                    ProjectName = d.Task.Project.ProjectName,
+                    Status = d.Status,
+                    d.CreatedAt
+                })
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(reports);
+        }
+
+        [Authorize(Roles = "Manager")]
+        [HttpGet("missing-label-evidence/{taskId}")]
+        public async Task<IActionResult> GetMissingLabelEvidence(Guid disputeLabelId)
+        { 
+            var managerId = GetManagerId();
+
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                    .ThenInclude(t => t.Project)
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d =>
+                    d.DisputeID == disputeLabelId &&
+                    d.Task.Project.ManagerID == managerId);
+
+            if (dispute == null)
+                return NotFound();
+
+            var evidenceImages = await _context.ReviewComments
+                .Where(rc => rc.ReviewHistory.TaskID == dispute.TaskID
+                          && rc.ReviewHistory.FinalResult == "DisputeEvidence")
+                .OrderByDescending(rc => rc.CreatedAt)
+                .Select(rc => rc.EvidenceImages)
+                .FirstOrDefaultAsync();
+
+            var images = string.IsNullOrEmpty(evidenceImages)
+                ? new List<string>()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(evidenceImages);
+
+            return Ok(new
+            {
+                dispute.DisputeID,
+                TaskName = dispute.Task.TaskName,
+                ProjectName = dispute.Task.Project.ProjectName,
+                Annotator = dispute.User.FullName,
+                dispute.Reason,
+                dispute.Status,
+                EvidenceImages = images,
+                dispute.CreatedAt
+            });
+        }
     }
 }
