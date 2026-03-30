@@ -6,15 +6,13 @@ using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Services;
 using System.Security.Claims;
+using static UpdateRuleDto;
 
 namespace SWP_BE.Controllers
 {
-    /// <summary>
-    /// PHÂN HỆ: MANAGER - Quản lý Dự án gán nhãn
-    /// </summary>
     [ApiController]
     [Route("api/manager/projects")]
-    [Authorize(Roles = "Manager")] // Yêu cầu quyền Manager để truy cập
+    [Authorize(Roles = "Manager")]
     public class ManagerController : ControllerBase
     {
         private readonly IProjectService _projectService;
@@ -315,33 +313,29 @@ namespace SWP_BE.Controllers
 
             if (dispute == null) return NotFound("Dispute không tồn tại.");
             if (dispute.Status != "Pending") return BadRequest("Dispute đã được xử lý.");
+
             dispute.ManagerComment = managerComment;
 
             if (action == "accept")
             {
                 dispute.Status = "Accepted";
-                if (dispute.Task.Status == Models.Task.TaskStatus.Fail)
-                {
-                    dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
-                }
-                dispute.Task.CurrentRound--;
-
-                if (dispute.Task.AnnotatorID.HasValue)
-                {
-                    await _reputationService.HandleTaskCompletionAsync(dispute.Task.AnnotatorID.Value, dispute.Task);
-                }
 
                 if (dispute.Task.ReviewerID.HasValue)
                 {
                     await _reputationService.HandleReviewerDisputeLossAsync(dispute.Task.ReviewerID.Value, dispute.Task.TaskID);
                 }
-
                 dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
+
+                if (dispute.Task.AnnotatorID.HasValue)
+                {
+                    await _reputationService.HandleTaskCompletionAsync(dispute.Task.AnnotatorID.Value, dispute.Task);
+                }
             }
             else if (action == "reject")
             {
                 dispute.Status = "Rejected";
                 await _reputationService.HandleAnnotatorDisputeLossAsync(dispute.UserID, dispute.TaskID);
+                dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Rejected;
             }
             else
             {
@@ -349,7 +343,7 @@ namespace SWP_BE.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Dispute resolved and scores updated." });
+            return Ok(new { message = "Đã phân xử khiếu nại thành công." });
         }
 
         [HttpGet("yolo/{projectId}")]
@@ -378,6 +372,23 @@ namespace SWP_BE.Controllers
             {
                 return BadRequest(new { message = "Export COCO thất bại", error = ex.Message });
             }
+        }
+
+        [HttpGet("performance/annotators")]
+        [ProducesResponseType(typeof(IEnumerable<AnnotatorSummaryDto>), 200)]
+        public async Task<IActionResult> GetAnnotatorsPerformance()
+        {
+            // Manager nào cũng có quyền xem danh sách nhân sự chung
+            var result = await _reputationService.GetAllAnnotatorsPerformanceAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("performance/reviewers")]
+        [ProducesResponseType(typeof(IEnumerable<ReviewerSummaryDto>), 200)]
+        public async Task<IActionResult> GetReviewersPerformance()
+        {
+            var result = await _reputationService.GetAllReviewersPerformanceAsync();
+            return Ok(result);
         }
     }
 }

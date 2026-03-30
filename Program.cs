@@ -1,10 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,35 +17,32 @@ namespace SWP_BE
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ===== THÊM DÒNG NÀY ĐỂ FIX LỖI DATETIME CỦA POSTGRESQL =====
-            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
-            // 1. Cấu hình CORS
+            // 1. CẤU HÌNH CORS (Để FE Vite gọi được API Local)
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
+                options.AddPolicy("AllowLocal", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("http://localhost:5173") // Port mặc định của Vite
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 });
             });
 
-            // ===== DB Connection (ĐÃ ĐỔI SANG SUPABASE - POSTGRESQL) =====
+            // 2. DATABASE (Sử dụng SQL Server cho Local)
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
-            // ===== Swagger Configuration =====
+            // 3. CẤU HÌNH SWAGGER CHI TIẾT
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "Data Labeling Support API",
+                    Title = "SWP-BE Local API",
                     Version = "v1.0",
-                    Description = "API phục vụ dự án Gán nhãn dữ liệu"
+                    Description = "API phục vụ dự án Gán nhãn dữ liệu (Môi trường Local)"
                 });
 
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -58,7 +52,7 @@ namespace SWP_BE
                     Scheme = "bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Dán Token vào đây:"
+                    Description = "Dán Token vào đây (Không cần chữ Bearer):"
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -71,13 +65,9 @@ namespace SWP_BE
                         Array.Empty<string>()
                     }
                 });
-
-                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
             });
 
-            // ===== Dependency Injection (DI) =====
+            // 4. DEPENDENCY INJECTION (DI)
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
@@ -99,7 +89,7 @@ namespace SWP_BE
             builder.Services.AddScoped<ExportService>();
             builder.Services.AddHttpContextAccessor();
 
-            // ===== JWT AUTH =====
+            // 5. CẤU HÌNH JWT AUTH
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -120,7 +110,7 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // ===== FIX LỖI 500: BẮT LỖI TOÀN CỤC VÀ TRẢ VỀ JSON =====
+            // 6. XỬ LÝ LỖI TOÀN CỤC (TRẢ VỀ JSON CHO FE DỄ ĐỌC)
             app.UseExceptionHandler(c => c.Run(async context =>
             {
                 var exception = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
@@ -128,37 +118,27 @@ namespace SWP_BE
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    Loi_Chinh_Xac = exception?.Message,
-                    Chi_Tiet = exception?.InnerException?.Message
+                    error = "Lỗi Server Local",
+                    detail = exception?.Message
                 });
             }));
 
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            // 7. SWAGGER TRONG MÔI TRƯỜNG DEVELOPMENT
+            if (app.Environment.IsDevelopment())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                options.RoutePrefix = string.Empty;
-            });
-
-            // Xử lý custom message cho các lỗi HTTP (như 401, 403, 404)
-            app.UseStatusCodePages(async context =>
-            {
-                context.HttpContext.Response.ContentType = "application/json";
-                var code = context.HttpContext.Response.StatusCode;
-
-                // Đoạn này mình thêm check khác 500 để không đè lên cái ExceptionHandler ở trên
-                if (code != 500)
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
                 {
-                    await context.HttpContext.Response.WriteAsJsonAsync(new
-                    {
-                        message = code == 404 ? "Không tìm thấy endpoint hoặc tài nguyên" : "Lỗi hệ thống hoặc không có quyền",
-                        statusCode = code
-                    });
-                }
-            });
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE Local v1.0");
+                    options.RoutePrefix = string.Empty; // Mở http://localhost:PORT/ là ra Swagger luôn
+                });
+            }
 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseCors("AllowAll");
+
+            // Kích hoạt CORS trước Auth
+            app.UseCors("AllowLocal");
 
             app.UseAuthentication();
             app.UseAuthorization();

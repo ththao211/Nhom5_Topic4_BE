@@ -50,7 +50,7 @@ namespace SWP_BE.Services
             var approvedItems = task.TaskItems
                 .Count(i =>
                  i.TaskItemDetails.Any() &&
-                 i.TaskItemDetails.All(d => d.IsApproved));
+                 i.TaskItemDetails.All(d => d.IsApproved == "True"));
             // ==============================
             // Final Progress (Reviewer)
             // ==============================

@@ -35,4 +35,27 @@ public class UpdateRuleDto
         public int DisputedTasksStreak { get; set; }
         public int CurrentPerfectRejectStreak { get; set; }
     }
+    public class AnnotatorSummaryDto
+    {
+        public Guid UserID { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public int Score { get; set; }
+        public bool IsActive { get; set; }
+        public int TotalCompletedTasks { get; set; }
+        public int CurrentPerfectStreak { get; set; }
+        public double AvgCompletionHours { get; set; }
+    }
+
+    public class ReviewerSummaryDto
+    {
+        public Guid UserID { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public int Score { get; set; }
+        public bool IsActive { get; set; }
+        public int TotalReviewedTasks { get; set; }
+        public int DisputedTasksStreak { get; set; } // Chuỗi bị khiếu nại sai
+        public double AvgReviewHours { get; set; }
+    }
 }

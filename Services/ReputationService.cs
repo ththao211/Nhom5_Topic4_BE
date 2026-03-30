@@ -366,6 +366,18 @@ namespace SWP_BE.Services
                 DisputedTasksStreak = stats.DisputedTasksStreak,
                 CurrentPerfectRejectStreak = stats.CurrentPerfectRejectStreak
             };
+
+
+        }
+
+        public async Task<IEnumerable<AnnotatorSummaryDto>> GetAllAnnotatorsPerformanceAsync()
+        {
+            return await _repo.GetAnnotatorsSummaryAsync();
+        }
+
+        public async Task<IEnumerable<ReviewerSummaryDto>> GetAllReviewersPerformanceAsync()
+        {
+            return await _repo.GetReviewersSummaryAsync();
         }
     }
 }

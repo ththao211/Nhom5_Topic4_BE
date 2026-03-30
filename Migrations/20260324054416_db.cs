@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class DB : Migration
+    public partial class db : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -482,7 +482,7 @@ namespace SWP_BE.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AnnotationData = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    IsApproved = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Field = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TaskItemID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -502,22 +502,22 @@ namespace SWP_BE.Migrations
                 columns: new[] { "RuleID", "Category", "Description", "IsActive", "RuleName", "UpdatedAt", "Value" },
                 values: new object[,]
                 {
-                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1659), 20 },
-                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1675), 2 },
-                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1676), -5 },
-                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1678), -10 },
-                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1679), -20 },
-                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1680), 50 },
-                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1681), 20 },
-                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1682), 3 },
-                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1683), 2 },
-                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1684), 1 },
-                    { 11, "Limit", "Số task Fail liên tiếp để Annotator bị khóa tài khoản", true, "Max_Consecutive_Fails", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1685), 3 },
-                    { 12, "Penalty", "Annotator khiếu nại sai (Dispute Rejected)", true, "Penalty_Annotator_Rejected_Dispute", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1687), -5 },
-                    { 13, "Limit", "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản", true, "Max_Disputed_Tasks_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1688), 3 },
-                    { 14, "Penalty", "Reviewer bắt lỗi sai (Dispute lost)", true, "Penalty_Reviewer_False_Check", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1689), -10 },
-                    { 15, "Reward", "Thưởng Reviewer reject 5 task liên tiếp không sai", true, "Reward_Reviewer_Perfect_Reject_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1690), 10 },
-                    { 16, "Limit", "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản", true, "Max_Wrong_Disputed_Tasks_Streak", new DateTime(2026, 3, 20, 16, 56, 20, 499, DateTimeKind.Local).AddTicks(1686), 3 }
+                    { 1, "Reward", "Hoàn thành ngay lần đầu (0 reject)", true, "Reward_Perfect", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2875), 20 },
+                    { 2, "Bonus", "Thưởng thêm nếu RateComplete > 95%", true, "Bonus_HighRate", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2889), 2 },
+                    { 3, "Penalty", "Trừ điểm khi Approve ở lần sửa 2", true, "Penalty_Reject_2", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2890), -5 },
+                    { 4, "Penalty", "Trừ điểm khi Approve ở lần sửa 3", true, "Penalty_Reject_3", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2891), -10 },
+                    { 5, "Penalty", "Task bị Fail (Reject lần 4)", true, "Penalty_Task_Fail", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2892), -20 },
+                    { 6, "Threshold", "Ngưỡng >= 50đ", true, "High_Threshold", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2893), 50 },
+                    { 7, "Threshold", "Ngưỡng 20 - 50đ", true, "Low_Threshold", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2895), 20 },
+                    { 8, "Limit", "Max 3 task", true, "Max_Task_High", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2896), 3 },
+                    { 9, "Limit", "Max 2 task", true, "Max_Task_Normal", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2897), 2 },
+                    { 10, "Limit", "Max 1 task", true, "Max_Task_Warning", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2898), 1 },
+                    { 11, "Limit", "Số task Fail liên tiếp để Annotator bị khóa tài khoản", true, "Max_Consecutive_Fails", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2899), 3 },
+                    { 12, "Penalty", "Annotator khiếu nại sai (Dispute Rejected)", true, "Penalty_Annotator_Rejected_Dispute", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2901), -5 },
+                    { 13, "Limit", "Số lần task bị Disputed liên tục để Reviewer bị khóa tài khoản", true, "Max_Disputed_Tasks_Streak", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2902), 3 },
+                    { 14, "Penalty", "Reviewer bắt lỗi sai (Dispute lost)", true, "Penalty_Reviewer_False_Check", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2903), -10 },
+                    { 15, "Reward", "Thưởng Reviewer reject 5 task liên tiếp không sai", true, "Reward_Reviewer_Perfect_Reject_Streak", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2904), 10 },
+                    { 16, "Limit", "Số lần task bị Disputed sai liên tục để Annotator bị khóa tài khoản", true, "Max_Wrong_Disputed_Tasks_Streak", new DateTime(2026, 3, 24, 12, 44, 15, 143, DateTimeKind.Local).AddTicks(2900), 3 }
                 });
 
             migrationBuilder.CreateIndex(

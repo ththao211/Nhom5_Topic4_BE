@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
+using static UpdateRuleDto;
 
 namespace SWP_BE.Repositories
 {
@@ -9,6 +10,8 @@ namespace SWP_BE.Repositories
         Task<User?> GetUserForUpdateAsync(Guid userId);
         Task<List<ReputationRule>> GetAllActiveRulesAsync();
         Task<List<ReputationLog>> GetLatestFailLogsAsync(Guid userId, int count);
+        Task<IEnumerable<AnnotatorSummaryDto>> GetAnnotatorsSummaryAsync();
+        Task<IEnumerable<ReviewerSummaryDto>> GetReviewersSummaryAsync();
 
 
         System.Threading.Tasks.Task AddLogAsync(ReputationLog log);
@@ -16,6 +19,8 @@ namespace SWP_BE.Repositories
         // Trong IReputationRepository.cs
         Task<List<ReputationRule>> GetAllRulesAsync(); // Lấy tất cả kể cả Inactive
         Task<ReputationRule?> GetRuleByIdAsync(int ruleId);
+
+
     }
 
     public class ReputationRepository : IReputationRepository
@@ -50,6 +55,42 @@ namespace SWP_BE.Repositories
         public async Task<ReputationRule?> GetRuleByIdAsync(int ruleId)
         {
             return await _context.ReputationRules.FindAsync(ruleId);
+        }
+
+        public async Task<IEnumerable<AnnotatorSummaryDto>> GetAnnotatorsSummaryAsync()
+        {
+            return await _context.Users
+                .Where(u => _context.AnnotatorStats.Any(s => s.UserID == u.UserID)) // Hoặc check theo Role
+                .Select(u => new AnnotatorSummaryDto
+                {
+                    UserID = u.UserID,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Score = u.Score,
+                    IsActive = u.IsActive,
+                    TotalCompletedTasks = u.AnnotatorStat.TotalCompletedTasks,
+                    CurrentPerfectStreak = u.AnnotatorStat.CurrentPerfectStreak,
+                    AvgCompletionHours = Math.Round(u.AnnotatorStat.AvgCompletionHours, 2)
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ReviewerSummaryDto>> GetReviewersSummaryAsync()
+        {
+            return await _context.Users
+                .Where(u => _context.ReviewerStats.Any(s => s.UserID == u.UserID))
+                .Select(u => new ReviewerSummaryDto
+                {
+                    UserID = u.UserID,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Score = u.Score,
+                    IsActive = u.IsActive,
+                    TotalReviewedTasks = u.ReviewerStat.TotalReviewedTasks,
+                    DisputedTasksStreak = u.ReviewerStat.DisputedTasksStreak,
+                    AvgReviewHours = Math.Round(u.ReviewerStat.AvgReviewHours, 2)
+                })
+                .ToListAsync();
         }
     }
 }
