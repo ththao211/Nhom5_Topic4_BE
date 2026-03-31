@@ -61,6 +61,7 @@ namespace SWP_BE.Controllers
                 UserName = username,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 FullName = dto.FullName.Trim(),
+                Expertise = dto.Expertise,
                 Email = email,
                 Role = (UserRole)dto.Role,
                 IsActive = true,
