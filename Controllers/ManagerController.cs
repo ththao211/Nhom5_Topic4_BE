@@ -224,7 +224,8 @@ namespace SWP_BE.Controllers
                     .ThenInclude(t => t.Project)
                 .Where(d =>
                     d.Task.ProjectID == projectId &&
-                    d.Task.Project.ManagerID == managerId)
+                    d.Task.Project.ManagerID == managerId &&
+                        d.Status != "MissingLabel")
                 .Select(d => new
                 {
                     d.DisputeID,
@@ -246,7 +247,8 @@ namespace SWP_BE.Controllers
             var disputes = await _context.Disputes
                 .Include(d => d.Task)
                     .ThenInclude(t => t.Project)
-                .Where(d => d.Task.Project.ManagerID == managerId)
+                .Where(d => d.Task.Project.ManagerID == managerId &&
+                        d.Status != "MissingLabel")
                 .Select(d => new
                 {
                     d.DisputeID,
@@ -377,23 +379,18 @@ namespace SWP_BE.Controllers
         [HttpGet("projects/{projectId}/missing-label-reports")]
         public async Task<IActionResult> GetMissingLabelReports(Guid projectId)
         {
-            var managerId = GetManagerId();
-
             var reports = await _context.Disputes
-                .Include(d => d.User)
                 .Include(d => d.Task)
+                .Include(d => d.User)
                 .Where(d =>
                     d.Task.ProjectID == projectId &&
-                    d.Task.Project.ManagerID == managerId)
+                    d.Status == "MissingLabel")
                 .Select(d => new
                 {
                     d.DisputeID,
-                    TaskName = d.Task.TaskName,
-                    ProjectName = d.Task.Project.ProjectName,
-                    Status = d.Status,
-                    d.CreatedAt
+                    d.TaskID,
+                    d.Reason,
                 })
-                .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync();
 
             return Ok(reports);
@@ -401,43 +398,21 @@ namespace SWP_BE.Controllers
 
         [Authorize(Roles = "Manager")]
         [HttpGet("missing-label-evidence/{taskId}")]
-        public async Task<IActionResult> GetMissingLabelEvidence(Guid disputeLabelId)
-        { 
-            var managerId = GetManagerId();
+        public async Task<IActionResult> GetEvidence(Guid taskId)
+        {
+            var evidence = await _context.ReviewComments
+                .Include(c => c.ReviewHistory)
+                .Where(c =>
+                    c.ReviewHistory.TaskID == taskId &&
+                    c.ReviewHistory.FinalResult == "MissingLabelEvidence")
+                .Select(c => new
+                {
+                    c.Comment,
+                    c.EvidenceImages
+                })
+                .ToListAsync();
 
-            var dispute = await _context.Disputes
-                .Include(d => d.Task)
-                    .ThenInclude(t => t.Project)
-                .Include(d => d.User)
-                .FirstOrDefaultAsync(d =>
-                    d.DisputeID == disputeLabelId &&
-                    d.Task.Project.ManagerID == managerId);
-
-            if (dispute == null)
-                return NotFound();
-
-            var evidenceImages = await _context.ReviewComments
-                .Where(rc => rc.ReviewHistory.TaskID == dispute.TaskID
-                          && rc.ReviewHistory.FinalResult == "DisputeEvidence")
-                .OrderByDescending(rc => rc.CreatedAt)
-                .Select(rc => rc.EvidenceImages)
-                .FirstOrDefaultAsync();
-
-            var images = string.IsNullOrEmpty(evidenceImages)
-                ? new List<string>()
-                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(evidenceImages);
-
-            return Ok(new
-            {
-                dispute.DisputeID,
-                TaskName = dispute.Task.TaskName,
-                ProjectName = dispute.Task.Project.ProjectName,
-                Annotator = dispute.User.FullName,
-                dispute.Reason,
-                dispute.Status,
-                EvidenceImages = images,
-                dispute.CreatedAt
-            });
+            return Ok(evidence);
         }
 
         [HttpGet("performance/annotators")]
