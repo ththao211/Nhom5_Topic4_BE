@@ -7,6 +7,7 @@ using SWP_BE.Models;
 using SWP_BE.Services;
 using System;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace SWP_BE.Controllers
 {
@@ -271,9 +272,7 @@ namespace SWP_BE.Controllers
 
         [Authorize(Roles = "Annotator")]
         [HttpPost("tasks/{taskId}/missing-label")]
-        public async Task<IActionResult> ReportMissingLabel(
-        Guid taskId,
-        DisputeRequestDto dto)
+        public async Task<IActionResult> ReportMissingLabel(Guid taskId, DisputeRequestDto dto)
         {
             var userId = GetCurrentUserId();
 
@@ -284,20 +283,18 @@ namespace SWP_BE.Controllers
             if (task == null)
                 return NotFound("Task không tồn tại");
 
-            // 1️⃣ tạo dispute missing-label
+            // tạo missing label report
             var dispute = new Dispute
             {
                 TaskID = taskId,
                 UserID = userId,
                 Reason = dto.Reason,
-                Status = "Pending",
+                Status = "MissingLabel",
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Disputes.Add(dispute);
 
-
-            // 2️⃣ tạo ReviewHistory để link evidence
             var history = new ReviewHistory
             {
                 TaskID = taskId,
@@ -310,26 +307,18 @@ namespace SWP_BE.Controllers
 
             await _context.SaveChangesAsync();
 
-
-            // 3️⃣ lưu evidence image vào ReviewComment
             var comment = new ReviewComment
             {
                 HistoryID = history.HistoryID,
                 Comment = dto.Reason,
-
-                EvidenceImages = System.Text.Json.JsonSerializer
-                    .Serialize(dto.EvidenceImages)
+                EvidenceImages = JsonSerializer.Serialize(dto.EvidenceImages)
             };
 
             _context.ReviewComments.Add(comment);
 
             await _context.SaveChangesAsync();
 
-
-            return Ok(new
-            {
-                message = "Missing label report sent to Manager"
-            });
+            return Ok("Đã gửi báo thiếu label");
         }
     }
 }
