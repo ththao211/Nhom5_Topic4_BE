@@ -439,5 +439,22 @@ namespace SWP_BE.Controllers
                 dispute.CreatedAt
             });
         }
+
+        [HttpGet("performance/annotators")]
+        [ProducesResponseType(typeof(IEnumerable<AnnotatorSummaryDto>), 200)]
+        public async Task<IActionResult> GetAnnotatorsPerformance()
+        {
+            // Manager nào cũng có quyền xem danh sách nhân sự chung
+            var result = await _reputationService.GetAllAnnotatorsPerformanceAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("performance/reviewers")]
+        [ProducesResponseType(typeof(IEnumerable<ReviewerSummaryDto>), 200)]
+        public async Task<IActionResult> GetReviewersPerformance()
+        {
+            var result = await _reputationService.GetAllReviewersPerformanceAsync();
+            return Ok(result);
+        }
     }
 }
