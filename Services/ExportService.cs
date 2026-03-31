@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
+using SWP_BE.Models;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -222,6 +223,15 @@ namespace SWP_BE.Services
 
                     var labelName =
                         Path.GetFileNameWithoutExtension(fileName) + ".txt";
+                    var exportLog = new ExportHistory
+                    {
+                        ExportID = Guid.NewGuid(),
+                        Format = "YOLO",
+                        CreatedAt = DateTime.UtcNow,
+                        ProjectID = projectId,
+                    };
+
+                    _context.ExportHistories.Add(exportLog);
 
                     await File.WriteAllLinesAsync(
                         Path.Combine(labelFolder, labelName),
