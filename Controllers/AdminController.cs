@@ -35,7 +35,7 @@ namespace SWP_BE.Controllers
         /// <param name="dto">Thông tin người dùng cần tạo</param>
         /// <response code="200">Tạo người dùng thành công, trả về userId</response>
         /// <response code="400">Dữ liệu đầu vào không hợp lệ hoặc Username đã tồn tại</response>
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]

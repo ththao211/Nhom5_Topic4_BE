@@ -142,7 +142,7 @@ namespace SWP_BE.Services
                             if (data == null)
                                 continue;
 
-                           
+
                             int labelId = -1;
 
                             // cố gắng đọc labelId nếu có
@@ -207,7 +207,7 @@ namespace SWP_BE.Services
                             );
 
                             lines.Add($"{labelIndex} {x} {y} {w} {h}");
-                            
+
                         }
                         catch (Exception ex)
                         {
