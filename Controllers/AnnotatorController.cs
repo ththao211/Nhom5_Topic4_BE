@@ -268,5 +268,68 @@ namespace SWP_BE.Controllers
 
             return Ok(stats);
         }
+
+        [Authorize(Roles = "Annotator")]
+        [HttpPost("tasks/{taskId}/missing-label")]
+        public async Task<IActionResult> ReportMissingLabel(
+        Guid taskId,
+        DisputeRequestDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            var task = await _context.Tasks
+                .Include(t => t.Project)
+                .FirstOrDefaultAsync(t => t.TaskID == taskId);
+
+            if (task == null)
+                return NotFound("Task không tồn tại");
+
+            // 1️⃣ tạo dispute missing-label
+            var dispute = new Dispute
+            {
+                TaskID = taskId,
+                UserID = userId,
+                Reason = dto.Reason,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Disputes.Add(dispute);
+
+
+            // 2️⃣ tạo ReviewHistory để link evidence
+            var history = new ReviewHistory
+            {
+                TaskID = taskId,
+                ReviewerID = userId,
+                ReviewAt = DateTime.UtcNow,
+                FinalResult = "MissingLabelEvidence"
+            };
+
+            _context.ReviewHistories.Add(history);
+
+            await _context.SaveChangesAsync();
+
+
+            // 3️⃣ lưu evidence image vào ReviewComment
+            var comment = new ReviewComment
+            {
+                HistoryID = history.HistoryID,
+                Comment = dto.Reason,
+
+                EvidenceImages = System.Text.Json.JsonSerializer
+                    .Serialize(dto.EvidenceImages)
+            };
+
+            _context.ReviewComments.Add(comment);
+
+            await _context.SaveChangesAsync();
+
+
+            return Ok(new
+            {
+                message = "Missing label report sent to Manager"
+            });
+        }
     }
 }
