@@ -16,7 +16,8 @@ namespace SWP_BE.Models
             PendingReview = 3,
             Approved = 4,
             Rejected = 5,
-            Fail = 6 // Bị reject 3 lần
+            Fail = 6, // Bị reject 3 lần
+            Disputed = 7
         }
 
         [Key]

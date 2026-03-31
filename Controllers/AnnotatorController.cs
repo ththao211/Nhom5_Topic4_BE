@@ -9,7 +9,6 @@ using System;
 using System.Security.Claims;
 
 namespace SWP_BE.Controllers
-    
 {
     [Authorize]
     [ApiController]
@@ -169,6 +168,11 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
 
+            var task = await _context.Tasks.FindAsync(taskId);
+            if (task == null) return NotFound("Không tìm thấy Task");
+
+            task.Status = SWP_BE.Models.Task.TaskStatus.Disputed;
+
             // 1. Tạo Dispute
             var dispute = new Dispute
             {
@@ -206,7 +210,7 @@ namespace SWP_BE.Controllers
             _context.ReviewComments.Add(comment);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Dispute created with evidence" });
+            return Ok(new { message = "Đã gửi khiếu nại và Task đã bị khóa." });
         }
 
         /// <summary>
@@ -239,69 +243,30 @@ namespace SWP_BE.Controllers
             return data != null ? Ok(data) : NotFound("Không thấy dữ liệu.");
         }
 
-
-        [Authorize(Roles = "Annotator")]
-        [HttpPost("tasks/{taskId}/missing-label")]
-        public async Task<IActionResult> ReportMissingLabel(
-    Guid taskId,
-    DisputeRequestDto dto)
+        //API bổ sung: Lấy thống kê chi tiết về hiệu suất làm việc của Annotator (số Task đã hoàn thành, tỷ lệ bị reject, điểm trung bình mỗi Task...)
+        [HttpGet("annotator/my-stats")]
+        public async Task<IActionResult> GetMyStats([FromServices] ReputationService repService)
         {
             var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Unauthorized();
 
-            var task = await _context.Tasks
-                .Include(t => t.Project)
-                .FirstOrDefaultAsync(t => t.TaskID == taskId);
-
-            if (task == null)
-                return NotFound("Task không tồn tại");
-
-            // 1️⃣ tạo dispute missing-label
-            var dispute = new Dispute
+            var stats = await repService.GetAnnotatorStatsAsync(userId);
+            if (stats == null)
             {
-                TaskID = taskId,
-                UserID = userId,
-                Reason = dto.Reason,
-                Status = "Pending",
-                CreatedAt = DateTime.UtcNow
-            };
+                return Ok(new
+                {
+                    totalCompletedTasks = 0,
+                    firstTryApprovedTasks = 0,
+                    totalWorkingHours = 0,
+                    avgCompletionHours = 0,
+                    currentPerfectStreak = 0,
+                    rejectDisputedTasksStreak = 0,
+                    experience = 0,
+                    reputationPoints = 100
+                });
+            }
 
-            _context.Disputes.Add(dispute);
-
-
-            // 2️⃣ tạo ReviewHistory để link evidence
-            var history = new ReviewHistory
-            {
-                TaskID = taskId,
-                ReviewerID = userId,
-                ReviewAt = DateTime.UtcNow,
-                FinalResult = "MissingLabelEvidence"
-            };
-
-            _context.ReviewHistories.Add(history);
-
-            await _context.SaveChangesAsync();
-
-
-            // 3️⃣ lưu evidence image vào ReviewComment
-            var comment = new ReviewComment
-            {
-                HistoryID = history.HistoryID,
-                Comment = dto.Reason,
-
-                EvidenceImages = System.Text.Json.JsonSerializer
-                    .Serialize(dto.EvidenceImages)
-            };
-
-            _context.ReviewComments.Add(comment);
-
-            await _context.SaveChangesAsync();
-
-
-            return Ok(new
-            {
-                message = "Missing label report sent to Manager"
-            });
+            return Ok(stats);
         }
-
     }
 }

@@ -2,6 +2,10 @@
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWP_BE.Repositories
 {
@@ -9,6 +13,7 @@ namespace SWP_BE.Repositories
     {
         Task<IEnumerable<ReviewerDisputeDto>> GetReviewerDisputes(Guid reviewerId);
     }
+
     public class ReviewerRepository : IReviewerRepository
     {
         private readonly AppDbContext _context;
@@ -18,33 +23,49 @@ namespace SWP_BE.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<object>> GetReviewerDisputes(Guid reviewerId)
+        public async Task<IEnumerable<ReviewerDisputeDto>> GetReviewerDisputes(Guid reviewerId)
         {
-            return await _context.Disputes
+            // Bước 1: Kéo dữ liệu từ DB (Bao gồm cả Reason, Status, CreatedAt, TaskID)
+            var rawData = await _context.Disputes
                 .Include(d => d.Task)
                     .ThenInclude(t => t.Project)
                 .Where(d => d.Task.ReviewerID == reviewerId)
+                .OrderByDescending(d => d.CreatedAt)
                 .Select(d => new
                 {
-                    d.DisputeID,
+                    DisputeID = d.DisputeID,
+                    TaskID = d.TaskID,
                     TaskName = d.Task.TaskName,
                     ProjectName = d.Task.Project.ProjectName,
-                    ManagerComment = d.ManagerComment,
+                    Reason = d.Reason,
+                    Status = d.Status,
+                    CreatedAt = d.CreatedAt,
 
-                    EvidenceImages = _context.ReviewComments
+                    EvidenceString = _context.ReviewComments
                         .Where(rc => rc.ReviewHistory.TaskID == d.TaskID
                                   && rc.ReviewHistory.FinalResult == "DisputeEvidence")
                         .OrderByDescending(rc => rc.CreatedAt)
                         .Select(rc => rc.EvidenceImages)
                         .FirstOrDefault()
                 })
-                .ToListAsync<object>();
-        }
+                .ToListAsync();
 
-        Task<IEnumerable<ReviewerDisputeDto>> IReviewerRepository.GetReviewerDisputes(Guid reviewerId)
-        {
-            throw new NotImplementedException();
+            // Bước 2: Map dữ liệu thô sang ReviewerDisputeDto chuẩn
+            return rawData.Select(d => new ReviewerDisputeDto
+            {
+                DisputeID = d.DisputeID,
+                TaskID = d.TaskID,
+                TaskName = d.TaskName,
+                ProjectName = d.ProjectName,
+                Reason = d.Reason,
+                Status = d.Status.ToString(),        // Chuyển Enum thành chữ (Pending, Approved...)
+                CreatedAt = d.CreatedAt,
+
+                // Tách hoặc bọc chuỗi ảnh vào List
+                EvidenceImages = string.IsNullOrEmpty(d.EvidenceString)
+                    ? new List<string>()
+                    : new List<string> { d.EvidenceString }
+            });
         }
     }
-
 }

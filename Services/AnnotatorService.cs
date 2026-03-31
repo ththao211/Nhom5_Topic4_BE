@@ -12,9 +12,6 @@ namespace SWP_BE.Services
         private readonly IAnnotatorRepository _repo;
         public AnnotatorService(IAnnotatorRepository repo) { _repo = repo; }
 
-        // ============================================================
-        // 1. LẤY DANH SÁCH TASK CỦA ANNOTATOR
-        // ============================================================
         public async System.Threading.Tasks.Task<IEnumerable<AnnotatorTaskDto>> GetTasks(Guid userId, string? status)
         {
             var tasks = await _repo.GetTasksAsync(userId, status);
@@ -28,9 +25,6 @@ namespace SWP_BE.Services
             });
         }
 
-        // ============================================================
-        // 2. XEM CHI TIẾT TASK (BAO GỒM CÁC FILE VÀ NHÃN)
-        // ============================================================
         public async System.Threading.Tasks.Task<TaskDetailDto?> GetTaskDetail(Guid taskId, Guid userId)
         {
             var t = await _repo.GetTaskByIdAsync(taskId, userId);
@@ -54,7 +48,8 @@ namespace SWP_BE.Services
                     {
                         AnnotationData = d.AnnotationData,
                         Content = d.Content,
-                        Field = d.Field
+                        Field = d.Field,
+                        IsApproved = d.IsApproved
                     }).ToList()
                 }).ToList(),
 
@@ -69,14 +64,9 @@ namespace SWP_BE.Services
             };
         }
 
-        // ============================================================
-        // 3. LƯU TỌA ĐỘ/NỘI DUNG GÁN NHÃN
-        // ============================================================
         public async System.Threading.Tasks.Task<bool> SaveAnnotation(Guid itemId, Guid userId, SaveAnnotationDto dto)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
-            // 1. Phải đúng là người được giao Task (AnnotatorID == userId)
-            // 2. Task phải đang trong trạng thái được phép sửa (Status == InProgress)
             if (item == null || item.Task == null ||
                 item.Task.AnnotatorID != userId ||
                 (item.Task.Status != SWP_BE.Models.Task.TaskStatus.InProgress &&
@@ -96,12 +86,23 @@ namespace SWP_BE.Services
                 {
                     foreach (var ann in dto.Annotations)
                     {
+                        // TRẠNG THÁI ĐƯỢC CHỐT Ở ĐÂY:
+                        // - Nếu DTO mang chữ "New" (vừa vẽ) hoặc bị rỗng ➔ Ép lưu thành "Complete"
+                        // - Nếu DTO mang chữ "True"/"False" (Đã bị chấm) ➔ Giữ nguyên không được đổi
+                        // - Nếu DTO mang chữ "Complete" (Sửa lại khung) ➔ Vẫn là "Complete"
+                        string finalStatus = ann.IsApproved;
+                        if (string.IsNullOrEmpty(finalStatus) || finalStatus.Equals("New", StringComparison.OrdinalIgnoreCase))
+                        {
+                            finalStatus = "Complete";
+                        }
+
                         item.TaskItemDetails.Add(new TaskItemDetail
                         {
                             AnnotationData = ann.AnnotationData,
                             Content = ann.Content,
                             Field = ann.Field,
-                            TaskItemID = itemId
+                            TaskItemID = itemId,
+                            IsApproved = finalStatus
                         });
                     }
                 }
@@ -114,41 +115,29 @@ namespace SWP_BE.Services
             }
         }
 
-        // ============================================================
-        // 4. NỘP BÀI (SUBMIT) - TĂNG VÒNG NỘP VÀ ĐỢI REVIEW
-        // ============================================================
         public async System.Threading.Tasks.Task<(bool Success, string Message)> SubmitTask(Guid taskId, Guid userId, bool isResubmit)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return (false, "Task không tồn tại.");
 
-            // Chỉ cho phép nộp khi Task đang ở trạng thái làm việc
-            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress && 
+            if (task.Status != SWP_BE.Models.Task.TaskStatus.InProgress &&
                 task.Status != SWP_BE.Models.Task.TaskStatus.Rejected)
                 return (false, "Bạn chỉ có thể nộp khi Task đang ở trạng thái InProgress.");
 
-            // Kiểm tra giới hạn: Nếu đã nộp 3 lần (vòng 4 bị Reject) thì không được nộp tiếp
             if (isResubmit && task.CurrentRound >= 4)
                 return (false, "Bạn đã sử dụng hết 3 lần sửa bài (Vòng 4 là cơ hội cuối cùng).");
 
-            // Kiểm tra xem tất cả các file đã được gán nhãn hoặc báo lỗi (Flag) chưa
             var items = task.TaskItems ?? new List<TaskItem>();
             if (items.Any(ti => !ti.IsFlagged && !(ti.TaskItemDetails?.Any() ?? false)))
                 return (false, "Vui lòng hoàn thành gán nhãn cho tất cả các file trước khi nộp.");
 
-            // Chuyển sang trạng thái chờ duyệt
             task.Status = SWP_BE.Models.Task.TaskStatus.PendingReview;
-
-            // LUÔN TĂNG VÒNG NỘP: Nộp lần đầu = 1, Lần sửa 1 = 2...
             task.CurrentRound++;
 
             await _repo.SaveChangesAsync();
             return (true, "Nộp bài thành công. Vui lòng đợi Reviewer phản hồi.");
         }
 
-        // ============================================================
-        // 5. BẮT ĐẦU LÀM
-        // ============================================================
         public async System.Threading.Tasks.Task<bool> StartTask(Guid taskId, Guid userId)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
@@ -161,9 +150,6 @@ namespace SWP_BE.Services
             return true;
         }
 
-        // ============================================================
-        // 6. BÁO LỖI FILE (FLAG) - TRƯỜNG HỢP ẢNH LỖI, KHÔNG GÁN NHÃN ĐC
-        // ============================================================
         public async System.Threading.Tasks.Task<bool> FlagItem(Guid itemId)
         {
             var item = await _repo.GetItemByIdAsync(itemId);
@@ -173,9 +159,6 @@ namespace SWP_BE.Services
             return true;
         }
 
-        // ============================================================
-        // 7. KHIẾU NẠI (DISPUTE) - KHI KHÔNG ĐỒNG Ý VỚI REVIEWER
-        // ============================================================
         public async System.Threading.Tasks.Task<bool> CreateDispute(Guid taskId, Guid userId, DisputeRequestDto dto)
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
@@ -191,35 +174,19 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
+            // Đóng băng Task bằng trạng thái Disputed
+            task.Status = SWP_BE.Models.Task.TaskStatus.Disputed;
+
             await _repo.AddDisputeAsync(dispute);
             await _repo.SaveChangesAsync();
             return true;
         }
 
-        // ============================================================
-        // 7.1 LẤY DANH SÁCH KHIẾU NẠI CỦA ANNOTATOR
-        // ============================================================
         public async System.Threading.Tasks.Task<IEnumerable<object>> GetMyDisputes(Guid userId)
         {
-            var disputes = await _repo.GetDisputesByUserIdAsync(userId);
-
-            return disputes.Select(d => new
-            {
-                DisputeID = d.DisputeID,
-                TaskID = d.TaskID,
-                TaskName = d.Task?.TaskName ?? "Unknown",
-                ProjectName = d.Task?.Project?.ProjectName ?? "Unknown",
-                Reason = d.Reason,
-                ManagerComment = d.ManagerComment,
-                Status = d.Status,
-                CreatedAt = d.CreatedAt,
-                ResolvedAt = d.ResolvedAt
-            });
+            return await _repo.GetDisputesByUserIdAsync(userId);
         }
 
-        // ============================================================
-        // 8. XEM ĐIỂM TÍN NHIỆM VÀ LỊCH SỬ BIẾN ĐỘNG
-        // ============================================================
         public async System.Threading.Tasks.Task<ReputationResponseDto?> GetReputation(Guid userId)
         {
             var user = await _repo.GetUserWithLogsAsync(userId);
@@ -239,9 +206,6 @@ namespace SWP_BE.Services
             };
         }
 
-        // ============================================================
-        // 9. LẤY CHI TIẾT 1 TẤM ẢNH 
-        // ============================================================
         public async System.Threading.Tasks.Task<TaskItemDto?> GetItemDetail(Guid itemId)
         {
             var ti = await _repo.GetItemByIdAsync(itemId);
@@ -257,7 +221,8 @@ namespace SWP_BE.Services
                 {
                     AnnotationData = d.AnnotationData,
                     Content = d.Content,
-                    Field = d.Field
+                    Field = d.Field,
+                    IsApproved = d.IsApproved
                 }).ToList()
             };
         }

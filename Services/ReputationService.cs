@@ -2,6 +2,7 @@
 using SWP_BE.Data;
 using SWP_BE.Models;
 using SWP_BE.Repositories;
+using static UpdateRuleDto;
 
 namespace SWP_BE.Services
 {
@@ -75,23 +76,16 @@ namespace SWP_BE.Services
 
             // --- LOGIC KIỂM TRA NGƯỠNG 0 - 100 ---
             int oldScore = user.Score;
-            // Tính toán điểm mới và ép vào khoảng [0, 100]
-            int newScore = oldScore + scoreDelta;
-
-            if (newScore > 100) newScore = 100; // Chặn trên 100
-            if (newScore < 0) newScore = 0;     // Chặn dưới 0
-
-            user.Score = newScore;
-
-            int actualChange = newScore - oldScore;
+            // Ép điểm User vào khoảng 0-100 bằng hàm helper
+            user.Score = CalculateClampedScore(oldScore, scoreDelta);
 
             // --- LƯU LOG VỚI SỐ ĐIỂM THỰC TẾ ---
             var log = new ReputationLog
             {
                 UserID = userId,
                 OldScore = oldScore,
-                NewScore = newScore,
-                ScoreChange = actualChange,
+                NewScore = user.Score,
+                ScoreChange = scoreDelta,
                 Reason = reason,
                 TaskID = task.TaskID,
                 RuleID = appliedRuleId,
@@ -149,7 +143,7 @@ namespace SWP_BE.Services
             // 1. TRỪ ĐIỂM REVIEWER (Rule 14: Penalty_Reviewer_False_Check = -10)
             int oldScore = reviewer.Score;
             int penalty = rules["Penalty_Reviewer_False_Check"].Value; // -10
-            reviewer.Score = Math.Clamp(oldScore + penalty, 0, 100);
+            reviewer.Score = CalculateClampedScore(oldScore, penalty);
 
             // 2. LƯU LOG TRỪ ĐIỂM
             await _repo.AddLogAsync(new ReputationLog
@@ -157,7 +151,7 @@ namespace SWP_BE.Services
                 UserID = reviewerId,
                 OldScore = oldScore,
                 NewScore = reviewer.Score,
-                ScoreChange = reviewer.Score - oldScore,
+                ScoreChange = penalty,
                 Reason = "Reviewer bắt lỗi sai (Dispute Accepted by Manager)",
                 TaskID = taskId,
                 RuleID = rules["Penalty_Reviewer_False_Check"].RuleID,
@@ -199,7 +193,7 @@ namespace SWP_BE.Services
             // 1. TRỪ ĐIỂM ANNOTATOR (Rule 12: Penalty_Annotator_Rejected_Dispute = -5)
             int oldScore = user.Score;
             int penalty = rules["Penalty_Annotator_Rejected_Dispute"].Value; // -5
-            user.Score = Math.Clamp(oldScore + penalty, 0, 100);
+            user.Score = CalculateClampedScore(oldScore, penalty);
 
             // 2. LƯU LOG TRỪ ĐIỂM
             await _repo.AddLogAsync(new ReputationLog
@@ -207,7 +201,7 @@ namespace SWP_BE.Services
                 UserID = annotatorId,
                 OldScore = oldScore,
                 NewScore = user.Score,
-                ScoreChange = user.Score - oldScore,
+                ScoreChange = penalty,
                 Reason = "Annotator khiếu nại sai (Dispute Rejected by Manager)",
                 TaskID = taskId,
                 RuleID = rules["Penalty_Annotator_Rejected_Dispute"].RuleID,
@@ -259,10 +253,19 @@ namespace SWP_BE.Services
             return (true, "Hợp lệ.");
         }
 
+        // --- HÀM HELPER ÉP ĐIỂM THEO Ý ANH ---
+        private int CalculateClampedScore(int currentScore, int delta)
+        {
+            int result = currentScore + delta;
+            if (result > 100) return 100;
+            if (result < 0) return 0;
+            return result;
+        }
+
         private async System.Threading.Tasks.Task CheckUserStatus(User user, Dictionary<string, ReputationRule> rules)
         {
             // Nếu người dùng đang bị khóa nhưng điểm đã được cộng lại > 0 và ghi log thì mở khóa
-            if (user.IsActive = false) user.IsActive = true;
+            if (user.IsActive == false) user.IsActive = true;
             // 1. Điểm về 0 -> Nghỉ việc
             if (user.Score <= 0) user.IsActive = false;
 
@@ -322,11 +325,59 @@ namespace SWP_BE.Services
             rule.Value = dto.Value;
             rule.Description = dto.Description;
             rule.IsActive = dto.IsActive;
-            rule.UpdatedAt = DateTime.Now;
+            rule.UpdatedAt = DateTime.UtcNow;
 
             await _repo.SaveChangesAsync();
 
             return (true, $"Đã cập nhật thành công luật: {rule.RuleName}");
+        }
+        // Trong ReputationService.cs
+
+        public async Task<AnnotatorStatsDto?> GetAnnotatorStatsAsync(Guid userId)
+        {
+            var stats = await _context.AnnotatorStats
+                .FirstOrDefaultAsync(s => s.UserID == userId);
+
+            if (stats == null) return null;
+
+            return new AnnotatorStatsDto
+            {
+                TotalCompletedTasks = stats.TotalCompletedTasks,
+                FirstTryApprovedTasks = stats.FirstTryApprovedTasks,
+                TotalWorkingHours = Math.Round(stats.TotalWorkingHours, 2),
+                AvgCompletionHours = Math.Round(stats.AvgCompletionHours, 2),
+                CurrentPerfectStreak = stats.CurrentPerfectStreak,
+                RejectDisputedTasksStreak = stats.RejectDisputedTasksStreak
+            };
+        }
+
+        public async Task<ReviewerStatsDto?> GetReviewerStatsAsync(Guid userId)
+        {
+            var stats = await _context.ReviewerStats
+                .FirstOrDefaultAsync(s => s.UserID == userId);
+
+            if (stats == null) return null;
+
+            return new ReviewerStatsDto
+            {
+                TotalReviewedTasks = stats.TotalReviewedTasks,
+                TotalReviewHours = Math.Round(stats.TotalReviewHours, 2),
+                AvgReviewHours = Math.Round(stats.AvgReviewHours, 2),
+                DisputedTasksStreak = stats.DisputedTasksStreak,
+                CurrentPerfectRejectStreak = stats.CurrentPerfectRejectStreak
+            };
+
+
+        }
+
+        public async Task<IEnumerable<AnnotatorSummaryDto>> GetAllAnnotatorsPerformanceAsync()
+        {
+            return await _repo.GetAnnotatorsSummaryAsync();
+        }
+
+        public async Task<IEnumerable<ReviewerSummaryDto>> GetAllReviewersPerformanceAsync()
+        {
+            return await _repo.GetReviewersSummaryAsync();
         }
     }
 }

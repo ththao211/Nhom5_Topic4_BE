@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
+using SWP_BE.Models;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -24,12 +25,11 @@ namespace SWP_BE.Services
                 .Include(t => t.Project)
                     .ThenInclude(p => p.ProjectLabels)
                         .ThenInclude(pl => pl.Label)
-                .Where(t => t.ProjectID == projectId &&
-                            t.Status == Models.Task.TaskStatus.Approved)
+                .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Không có task Approved");
+                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
 
             var project = tasks.First().Project;
 
@@ -83,8 +83,7 @@ namespace SWP_BE.Services
             {
                 foreach (var item in task.TaskItems)
                 {
-                    if (item.DataItem == null)
-                        continue;
+                    if (item.DataItem == null) continue;
 
                     if (!detailLookup.ContainsKey(item.ItemID))
                         continue;
@@ -144,7 +143,7 @@ namespace SWP_BE.Services
                             if (data == null)
                                 continue;
 
-                           
+
                             int labelId = -1;
 
                             // cố gắng đọc labelId nếu có
@@ -209,13 +208,14 @@ namespace SWP_BE.Services
                             );
 
                             lines.Add($"{labelIndex} {x} {y} {w} {h}");
-                            
+
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"PARSE ERROR: {ex.Message}");
                             continue;
                         }
+                        catch { }
                     }
 
                     if (!lines.Any())
@@ -223,6 +223,15 @@ namespace SWP_BE.Services
 
                     var labelName =
                         Path.GetFileNameWithoutExtension(fileName) + ".txt";
+                    var exportLog = new ExportHistory
+                    {
+                        ExportID = Guid.NewGuid(),
+                        Format = "YOLO",
+                        CreatedAt = DateTime.UtcNow,
+                        ProjectID = projectId,
+                    };
+
+                    _context.ExportHistories.Add(exportLog);
 
                     await File.WriteAllLinesAsync(
                         Path.Combine(labelFolder, labelName),
@@ -255,7 +264,7 @@ namespace SWP_BE.Services
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Không có task Approved");
+                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
 
             var project = tasks.First().Project;
 
@@ -359,7 +368,6 @@ namespace SWP_BE.Services
                             continue;
                         }
                     }
-
                     imageId++;
                 }
             }
