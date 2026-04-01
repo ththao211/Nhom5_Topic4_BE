@@ -48,7 +48,8 @@ namespace SWP_BE.Services
                     {
                         AnnotationData = d.AnnotationData,
                         Content = d.Content,
-                        Field = d.Field
+                        Field = d.Field,
+                        IsApproved = d.IsApproved
                     }).ToList()
                 }).ToList(),
 
@@ -85,12 +86,23 @@ namespace SWP_BE.Services
                 {
                     foreach (var ann in dto.Annotations)
                     {
+                        // TRẠNG THÁI ĐƯỢC CHỐT Ở ĐÂY:
+                        // - Nếu DTO mang chữ "New" (vừa vẽ) hoặc bị rỗng ➔ Ép lưu thành "Complete"
+                        // - Nếu DTO mang chữ "True"/"False" (Đã bị chấm) ➔ Giữ nguyên không được đổi
+                        // - Nếu DTO mang chữ "Complete" (Sửa lại khung) ➔ Vẫn là "Complete"
+                        string finalStatus = ann.IsApproved;
+                        if (string.IsNullOrEmpty(finalStatus) || finalStatus.Equals("New", StringComparison.OrdinalIgnoreCase))
+                        {
+                            finalStatus = "Complete";
+                        }
+
                         item.TaskItemDetails.Add(new TaskItemDetail
                         {
                             AnnotationData = ann.AnnotationData,
                             Content = ann.Content,
                             Field = ann.Field,
-                            TaskItemID = itemId
+                            TaskItemID = itemId,
+                            IsApproved = finalStatus
                         });
                     }
                 }
@@ -162,17 +174,16 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
+            // Đóng băng Task bằng trạng thái Disputed
+            task.Status = SWP_BE.Models.Task.TaskStatus.Disputed;
+
             await _repo.AddDisputeAsync(dispute);
             await _repo.SaveChangesAsync();
             return true;
         }
 
-        // ============================================================
-        // 🔥 7.1 LẤY DANH SÁCH KHIẾU NẠI CỦA ANNOTATOR
-        // ============================================================
         public async System.Threading.Tasks.Task<IEnumerable<object>> GetMyDisputes(Guid userId)
         {
-            // Repository đã chuẩn bị đủ dữ liệu (kèm EvidenceImages), trả thẳng về luôn!
             return await _repo.GetDisputesByUserIdAsync(userId);
         }
 
@@ -210,7 +221,8 @@ namespace SWP_BE.Services
                 {
                     AnnotationData = d.AnnotationData,
                     Content = d.Content,
-                    Field = d.Field
+                    Field = d.Field,
+                    IsApproved = d.IsApproved
                 }).ToList()
             };
         }

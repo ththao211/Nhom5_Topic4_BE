@@ -1,35 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
-using SWP_BE.Models;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using System.Security.Claims; // ĐÃ THÊM THƯ VIỆN NÀY ĐỂ LẤY TOKEN
+using SWP_BE.Models;
 
 namespace SWP_BE.Services
 {
     public class ExportService
     {
         private readonly AppDbContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ExportService(
-            AppDbContext context,
-            IHttpContextAccessor httpContextAccessor
-        )
+        public ExportService(AppDbContext context)
         {
             _context = context;
-            _httpContextAccessor = httpContextAccessor;
         }
 
-        // ==========================================
-        // EXPORT YOLO (ZIP)
-        // ==========================================
+        // ================= YOLO EXPORT =================
         public async Task<(byte[] fileBytes, string fileName)> ExportYoloZipAsync(Guid projectId)
         {
             var tasks = await _context.Tasks
-                .Include(t => t.TaskItems)
-                    .ThenInclude(i => i.TaskItemDetails)
                 .Include(t => t.TaskItems)
                     .ThenInclude(i => i.DataItem)
                 .Include(t => t.Project)
@@ -41,17 +31,41 @@ namespace SWP_BE.Services
             if (!tasks.Any())
                 throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
 
-            ValidateData(tasks);
-
             var project = tasks.First().Project;
 
-            // ===== LABEL MAP =====
-            var labelMap = project.ProjectLabels
+            var taskItemIds = tasks
+                .SelectMany(t => t.TaskItems)
+                .Select(i => i.ItemID)
+                .ToList();
+
+            var details = await _context.TaskItemDetails
+                .Where(d => taskItemIds.Contains(d.TaskItemID)
+                    && !string.IsNullOrWhiteSpace(d.AnnotationData))
+                .Select(d => new
+                {
+                    d.TaskItemID,
+                    d.AnnotationData
+                })
+                .ToListAsync();
+
+            Console.WriteLine($"DETAIL COUNT = {details.Count}");
+
+            var detailLookup = details
+                .GroupBy(d => d.TaskItemID)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var groupedLabels = project.ProjectLabels
                 .GroupBy(pl => pl.LabelID)
-                .Select((g, index) => new { LabelID = g.Key, index })
+                .Select(g => g.First())
+                .ToList();
+
+            var labelMap = groupedLabels
+                .Select((pl, index) => new { pl.LabelID, index })
                 .ToDictionary(x => x.LabelID, x => x.index);
 
-            // ===== TEMP FOLDER =====
+            var classNames = groupedLabels
+                .Select(pl => pl.CustomName ?? pl.Label.LabelName);
+
             var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var imageFolder = Path.Combine(tempFolder, "images");
             var labelFolder = Path.Combine(tempFolder, "labels");
@@ -60,9 +74,10 @@ namespace SWP_BE.Services
             Directory.CreateDirectory(imageFolder);
             Directory.CreateDirectory(labelFolder);
 
-            // ===== classes.txt =====
-            var classNames = project.ProjectLabels.Select(pl => pl.CustomName ?? pl.Label.LabelName);
-            await File.WriteAllLinesAsync(Path.Combine(tempFolder, "classes.txt"), classNames);
+            await File.WriteAllLinesAsync(
+                Path.Combine(tempFolder, "classes.txt"),
+                classNames
+            );
 
             foreach (var task in tasks)
             {
@@ -70,117 +85,211 @@ namespace SWP_BE.Services
                 {
                     if (item.DataItem == null) continue;
 
-                    // Copy Image (Bọc try-catch để an toàn trên Azure)
-                    try
+                    if (!detailLookup.ContainsKey(item.ItemID))
+                        continue;
+
+                    var filePath = item.DataItem.FilePath;
+
+                    if (string.IsNullOrEmpty(filePath))
+                        continue;
+
+                    var extension = Path.GetExtension(filePath);
+                    if (string.IsNullOrEmpty(extension))
+                        extension = ".jpg";
+
+                    var fileName =
+                        Path.GetFileNameWithoutExtension(item.DataItem.FileName)
+                        + extension;
+
+                    var destImagePath = Path.Combine(imageFolder, fileName);
+
+                    if (filePath.StartsWith("http"))
                     {
-                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), item.DataItem.FilePath);
-                        if (File.Exists(imagePath))
-                        {
-                            var destImagePath = Path.Combine(imageFolder, item.DataItem.FileName);
-                            File.Copy(imagePath, destImagePath, true);
-                        }
+                        using var httpClient = new HttpClient();
+                        var imageBytes = await httpClient.GetByteArrayAsync(filePath);
+
+                        if (imageBytes.Length == 0)
+                            continue;
+
+                        await File.WriteAllBytesAsync(destImagePath, imageBytes);
                     }
-                    catch
+                    else
                     {
-                        // Nếu không tìm thấy file ảnh gốc trên server thì bỏ qua ảnh này
+                        var imagePath = Path.Combine(
+                            Directory.GetCurrentDirectory(),
+                            "wwwroot",
+                            filePath
+                        );
+
+                        if (!File.Exists(imagePath))
+                            continue;
+
+                        File.Copy(imagePath, destImagePath, true);
                     }
 
-                    // Generate Label Text File
                     var lines = new List<string>();
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
+
+                    foreach (var detail in detailLookup[item.ItemID])
                     {
                         try
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
-                            if (data == null) continue;
+                            Console.WriteLine($"RAW JSON = {detail.AnnotationData}");
 
-                            int labelId = Convert.ToInt32(data["labelId"].ToString());
-                            if (!labelMap.ContainsKey(labelId)) continue;
+                            var data =
+                                JsonSerializer.Deserialize<
+                                    Dictionary<string, JsonElement>
+                                >(detail.AnnotationData);
 
-                            double x = Convert.ToDouble(data["x"].ToString());
-                            double y = Convert.ToDouble(data["y"].ToString());
-                            double w = Convert.ToDouble(data["w"].ToString());
-                            double h = Convert.ToDouble(data["h"].ToString());
-
-                            if (x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || h <= 0)
+                            if (data == null)
                                 continue;
 
-                            lines.Add($"{labelMap[labelId]} {x} {y} {w} {h}");
+
+                            int labelId = -1;
+
+                            // cố gắng đọc labelId nếu có
+                            if (data.ContainsKey("labelId"))
+                                labelId = data["labelId"].GetInt32();
+
+                            else if (data.ContainsKey("labelID"))
+                                labelId = data["labelID"].GetInt32();
+
+                            else if (data.ContainsKey("classId"))
+                                labelId = data["classId"].GetInt32();
+
+
+                            // nếu không có labelId → fallback class 0
+                            int labelIndex = 0;
+
+                            if (labelId != -1)
+                            {
+                                if (!labelMap.ContainsKey(labelId))
+                                    continue;
+
+                                labelIndex = labelMap[labelId];
+                            }
+
+                            double x = 0, y = 0, w = 0, h = 0;
+
+                            if (data.ContainsKey("x")
+                                && data.ContainsKey("y")
+                                && data.ContainsKey("w")
+                                && data.ContainsKey("h"))
+                            {
+                                x = data["x"].GetDouble();
+                                y = data["y"].GetDouble();
+                                w = data["w"].GetDouble();
+                                h = data["h"].GetDouble();
+                            }
+                            else if (data.ContainsKey("x")
+                                && data.ContainsKey("y")
+                                && data.ContainsKey("width")
+                                && data.ContainsKey("height"))
+                            {
+                                var imgW = item.DataItem.Width ?? 1;
+                                var imgH = item.DataItem.Height ?? 1;
+
+                                var px = data["x"].GetDouble();
+                                var py = data["y"].GetDouble();
+                                var pw = data["width"].GetDouble();
+                                var ph = data["height"].GetDouble();
+
+                                x = px / imgW;
+                                y = py / imgH;
+                                w = pw / imgW;
+                                h = ph / imgH;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+
+                            Console.WriteLine(
+                                $"ADD LABEL: {labelId} {x} {y} {w} {h}"
+                            );
+
+                            lines.Add($"{labelIndex} {x} {y} {w} {h}");
+
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Console.WriteLine($"PARSE ERROR: {ex.Message}");
                             continue;
                         }
+                        catch { }
                     }
 
-                    if (lines.Any())
-                    {
-                        var labelName = Path.GetFileNameWithoutExtension(item.DataItem.FileName) + ".txt";
-                        var labelPath = Path.Combine(labelFolder, labelName);
-                        await File.WriteAllLinesAsync(labelPath, lines);
-                    }
+                    if (!lines.Any())
+                        continue;
+
+                    var labelName =
+                        Path.GetFileNameWithoutExtension(fileName) + ".txt";
+
+                    await File.WriteAllLinesAsync(
+                        Path.Combine(labelFolder, labelName),
+                        lines
+                    );
                 }
             }
 
-            // ===== ZIP =====
-            var zipPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
+            var zipPath =
+                Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
+
             ZipFile.CreateFromDirectory(tempFolder, zipPath);
 
             var bytes = await File.ReadAllBytesAsync(zipPath);
+            var projectExists = await _context.Projects
+            .AnyAsync(p => p.ProjectID == projectId);
 
-            var managerId = GetManagerId();
-
-            var itemCount = tasks
-                .SelectMany(t => t.TaskItems)
-                .Count();
+            if (!projectExists)
+                throw new Exception("Project không tồn tại.");
 
             _context.ExportHistories.Add(new ExportHistory
             {
                 ExportID = Guid.NewGuid(),
                 Format = "YOLO",
-                ItemCount = itemCount,
                 CreatedAt = DateTime.UtcNow,
                 ProjectID = projectId,
-                ManagerID = managerId
+                ManagerID = project.ManagerID
             });
 
             await _context.SaveChangesAsync();
             return (bytes, "yolo_dataset.zip");
         }
 
-        // ==========================================
-        // EXPORT COCO (FILE BYTES)
-        // ==========================================
+
+        // ================= COCO EXPORT =================
         public async Task<(byte[] fileBytes, string fileName)> ExportCocoFileAsync(Guid projectId)
         {
             var tasks = await _context.Tasks
-                .Include(t => t.TaskItems)
-                    .ThenInclude(i => i.TaskItemDetails)
                 .Include(t => t.TaskItems)
                     .ThenInclude(i => i.DataItem)
                 .Include(t => t.Project)
                     .ThenInclude(p => p.ProjectLabels)
                         .ThenInclude(pl => pl.Label)
-                .Where(t => t.ProjectID == projectId && t.Status == Models.Task.TaskStatus.Approved)
+                .Where(t => t.ProjectID == projectId &&
+                            t.Status == Models.Task.TaskStatus.Approved)
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
-
-            ValidateData(tasks);
+                throw new Exception("Không có task Approved.");
 
             var project = tasks.First().Project;
 
-            var categories = project.ProjectLabels
+            var groupedLabels = project.ProjectLabels
+                .GroupBy(pl => pl.LabelID)
+                .Select(g => g.First())
+                .ToList();
+
+            var labelMap = groupedLabels
+                .Select((pl, index) => new { pl.LabelID, index })
+                .ToDictionary(x => x.LabelID, x => x.index);
+
+            var categories = groupedLabels
                 .Select((pl, index) => new
                 {
                     id = index,
                     name = pl.CustomName ?? pl.Label.LabelName
-                }).ToList();
-
-            var labelMap = project.ProjectLabels
-                .Select((pl, index) => new { pl.LabelID, index })
-                .ToDictionary(x => x.LabelID, x => x.index);
+                });
 
             int imageId = 1;
             int annotationId = 1;
@@ -192,7 +301,8 @@ namespace SWP_BE.Services
             {
                 foreach (var item in task.TaskItems)
                 {
-                    if (item.DataItem == null) continue;
+                    if (item.DataItem == null)
+                        continue;
 
                     images.Add(new
                     {
@@ -202,110 +312,92 @@ namespace SWP_BE.Services
                         height = item.DataItem.Height ?? 1
                     });
 
-                    foreach (var detail in item.TaskItemDetails.Where(d => d.IsApproved))
+                    foreach (var detail in item.TaskItemDetails)
                     {
                         try
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(detail.AnnotationData);
-                            if (data == null) continue;
+                            var data = JsonSerializer.Deserialize<
+                                Dictionary<string, JsonElement>
+                            >(detail.AnnotationData);
 
-                            int labelId = Convert.ToInt32(data["labelId"].ToString());
-                            if (!labelMap.ContainsKey(labelId)) continue;
+                            if (data == null)
+                                continue;
 
-                            double x = Convert.ToDouble(data["x"].ToString());
-                            double y = Convert.ToDouble(data["y"].ToString());
-                            double w = Convert.ToDouble(data["w"].ToString());
-                            double h = Convert.ToDouble(data["h"].ToString());
+                            if (!data.ContainsKey("labelId"))
+                                continue;
+
+                            var labelId =
+                                data["labelId"].GetInt32();
+
+                            if (!labelMap.ContainsKey(labelId))
+                                continue;
+
+                            var x = data["x"].GetDouble();
+                            var y = data["y"].GetDouble();
+                            var w = data["w"].GetDouble();
+                            var h = data["h"].GetDouble();
 
                             var width = item.DataItem.Width ?? 1;
                             var height = item.DataItem.Height ?? 1;
 
                             var cocoX = (x - w / 2) * width;
                             var cocoY = (y - h / 2) * height;
-                            var cocoW = w * width;
-                            var cocoH = h * height;
 
                             annotations.Add(new
                             {
                                 id = annotationId++,
                                 image_id = imageId,
                                 category_id = labelMap[labelId],
-                                bbox = new[] { cocoX, cocoY, cocoW, cocoH },
-                                area = cocoW * cocoH,
+                                bbox = new[]
+                                {
+                                    cocoX,
+                                    cocoY,
+                                    w * width,
+                                    h * height
+                                },
+                                area = w * h * width * height,
                                 iscrowd = 0
                             });
                         }
-                        catch { }
+                        catch
+                        {
+                            continue;
+                        }
                     }
+
                     imageId++;
                 }
             }
 
-            var coco = new { images, annotations, categories };
-
-            var json = JsonSerializer.Serialize(coco, new JsonSerializerOptions
+            var coco = new
             {
-                WriteIndented = true
-            });
+                images,
+                annotations,
+                categories
+            };
 
-            var managerId = GetManagerId();
-
-            var itemCount = tasks
-                .SelectMany(t => t.TaskItems)
-                .Count();
+            var json =
+                JsonSerializer.Serialize(coco,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
 
             _context.ExportHistories.Add(new ExportHistory
             {
                 ExportID = Guid.NewGuid(),
                 Format = "COCO",
-                ItemCount = itemCount,
                 CreatedAt = DateTime.UtcNow,
                 ProjectID = projectId,
-                ManagerID = managerId
+                ManagerID = project.ManagerID
             });
 
             await _context.SaveChangesAsync();
-            return (Encoding.UTF8.GetBytes(json), "coco_export.json");
-        }
 
-        // ==========================================
-        // VALIDATION
-        // ==========================================
-        private void ValidateData(List<Models.Task> tasks)
-        {
-            foreach (var task in tasks)
-            {
-                foreach (var item in task.TaskItems)
-                {
-                    if (item.DataItem == null)
-                        throw new Exception($"Item {item.ItemID} thiếu dữ liệu gốc (DataItem)");
-
-                    // Mình tạm thời COMMENT DÒNG NÀY LẠI vì đôi khi có những ảnh "trống" (background) không có nhãn
-                    // Nếu ném lỗi ở đây thì sẽ bị văng lỗi 400 cả cái Project.
-                    // if (!item.TaskItemDetails.Any())
-                    //     throw new Exception($"Item {item.ItemID} chưa có annotation");
-                }
-            }
-        }
-
-        // ==========================================
-        // ĐÃ FIX: HÀM LẤY ID MANAGER CHUẨN XÁC
-        // ==========================================
-        private Guid GetManagerId()
-        {
-            var user = _httpContextAccessor.HttpContext?.User;
-
-            // Tìm theo nhiều cách lưu Key khác nhau trong Token
-            var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                      ?? user?.FindFirst("id")?.Value
-                      ?? user?.FindFirst("sub")?.Value;
-
-            if (Guid.TryParse(userId, out var guidId))
-            {
-                return guidId;
-            }
-
-            throw new Exception("Hết cứu: Không thể trích xuất ID người dùng từ Token. Vui lòng đăng nhập lại.");
+            return (
+                Encoding.UTF8.GetBytes(json),
+                "coco_export.json"
+            );
         }
     }
 }

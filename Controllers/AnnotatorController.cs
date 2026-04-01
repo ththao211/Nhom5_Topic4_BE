@@ -1,14 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Services;
 using System;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace SWP_BE.Controllers
-    
 {
     [Authorize]
     [ApiController]
@@ -168,6 +169,11 @@ namespace SWP_BE.Controllers
         {
             var userId = GetCurrentUserId();
 
+            var task = await _context.Tasks.FindAsync(taskId);
+            if (task == null) return NotFound("Không tìm thấy Task");
+
+            task.Status = SWP_BE.Models.Task.TaskStatus.Disputed;
+
             // 1. Tạo Dispute
             var dispute = new Dispute
             {
@@ -205,7 +211,7 @@ namespace SWP_BE.Controllers
             _context.ReviewComments.Add(comment);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Dispute created with evidence" });
+            return Ok(new { message = "Đã gửi khiếu nại và Task đã bị khóa." });
         }
 
         /// <summary>
@@ -257,12 +263,61 @@ namespace SWP_BE.Controllers
                     currentPerfectStreak = 0,
                     rejectDisputedTasksStreak = 0,
                     experience = 0,
-                    reputationPoints = 100 
+                    reputationPoints = 100
                 });
             }
 
             return Ok(stats);
         }
 
+        [Authorize(Roles = "Annotator")]
+        [HttpPost("tasks/{taskId}/missing-label")]
+        public async Task<IActionResult> ReportMissingLabel(Guid taskId, DisputeRequestDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            var task = await _context.Tasks
+                .Include(t => t.Project)
+                .FirstOrDefaultAsync(t => t.TaskID == taskId);
+
+            if (task == null)
+                return NotFound("Task không tồn tại");
+
+            // tạo missing label report
+            var dispute = new Dispute
+            {
+                TaskID = taskId,
+                UserID = userId,
+                Reason = dto.Reason,
+                Status = "MissingLabel",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Disputes.Add(dispute);
+
+            var history = new ReviewHistory
+            {
+                TaskID = taskId,
+                ReviewAt = DateTime.UtcNow,
+                FinalResult = "MissingLabelEvidence"
+            };
+
+            _context.ReviewHistories.Add(history);
+
+            await _context.SaveChangesAsync();
+
+            var comment = new ReviewComment
+            {
+                HistoryID = history.HistoryID,
+                Comment = dto.Reason,
+                EvidenceImages = JsonSerializer.Serialize(dto.EvidenceImages)
+            };
+
+            _context.ReviewComments.Add(comment);
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Đã gửi báo thiếu label");
+        }
     }
 }

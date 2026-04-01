@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace SWP_BE.DTOs
 {
+
     // THÊM MỚI: Class chứa thông tin Tên và Màu của nhãn
     public class LabelInfoDto
     {
@@ -37,6 +38,8 @@ namespace SWP_BE.DTOs
 
         // Loại công cụ vẽ (mặc định là BoundingBox)
         public string Field { get; set; } = "BoundingBox";
+
+        public string IsApproved { get; set; } = "New";
     }
 
     public class TaskItemDto
