@@ -3,6 +3,7 @@ using SWP_BE.Data;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using SWP_BE.Models;
 
 namespace SWP_BE.Services
 {
