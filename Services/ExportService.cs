@@ -248,7 +248,8 @@ namespace SWP_BE.Services
                 ExportID = Guid.NewGuid(),
                 Format = "YOLO",
                 CreatedAt = DateTime.UtcNow,
-                ProjectID = projectId
+                ProjectID = projectId,
+                ManagerID = project.ManagerID
             });
 
             await _context.SaveChangesAsync();
@@ -387,7 +388,8 @@ namespace SWP_BE.Services
                 ExportID = Guid.NewGuid(),
                 Format = "COCO",
                 CreatedAt = DateTime.UtcNow,
-                ProjectID = projectId
+                ProjectID = projectId,
+                ManagerID = project.ManagerID
             });
 
             await _context.SaveChangesAsync();
