@@ -17,9 +17,6 @@ namespace SWP_BE.Services
             _context = context;
         }
 
-        /// <summary>
-        /// Xử lý tính điểm khi Task kết thúc (Approved hoặc Fail)
-        /// </summary>
         public async System.Threading.Tasks.Task HandleTaskCompletionAsync(Guid userId, Models.Task task)
         {
             var user = await _repo.GetUserForUpdateAsync(userId);
@@ -30,17 +27,16 @@ namespace SWP_BE.Services
             string reason = "";
             int? appliedRuleId = null;
 
-            // --- LOGIC TÍNH TOÁN ĐIỂM BIẾN ĐỘNG (scoreDelta) ---
             if (task.Status == Models.Task.TaskStatus.Approved || task.Status == Models.Task.TaskStatus.Rejected)
             {
                 switch (task.CurrentRound)
-                {//fix log ở đây (reason)
-                    case 1: // Perfect
-                        scoreDelta = rules["Reward_Perfect"].Value; // +20
+                {
+                    case 1:
+                        scoreDelta = rules["Reward_Perfect"].Value;
                         reason = "Perfect: Hoàn thành ngay từ đầu";
                         appliedRuleId = rules["Reward_Perfect"].RuleID;
                         break;
-                    case 2: // Sau sửa lần 1
+                    case 2:
                         scoreDelta = 0;
                         reason = "Approve sau sửa lần 1";
                         if (task.RateComplete > 95)
@@ -50,18 +46,14 @@ namespace SWP_BE.Services
                             appliedRuleId = rules["Bonus_HighRate"].RuleID;
                         }
                         break;
-                    case 3: // Sau sửa lần 2
-                        scoreDelta = rules["Penalty_Reject_2"].Value; // -5
+                    case 3:
+                        scoreDelta = rules["Penalty_Reject_2"].Value;
                         reason = "Approve sau sửa lần 2";
                         appliedRuleId = rules["Penalty_Reject_2"].RuleID;
-                        if (task.RateComplete > 95)
-                        {
-                            scoreDelta += 2;
-                            reason += " (+2đ Bonus HighRate)";
-                        }
+                        if (task.RateComplete > 95) scoreDelta += 2;
                         break;
-                    case 4: // Sau sửa lần 3
-                        scoreDelta = rules["Penalty_Reject_3"].Value; // -10
+                    case 4:
+                        scoreDelta = rules["Penalty_Reject_3"].Value;
                         reason = "Approve sau sửa lần 3";
                         appliedRuleId = rules["Penalty_Reject_3"].RuleID;
                         break;
@@ -69,17 +61,31 @@ namespace SWP_BE.Services
             }
             else if (task.Status == Models.Task.TaskStatus.Fail)
             {
-                scoreDelta = rules["Penalty_Task_Fail"].Value; // -20
+                scoreDelta = rules["Penalty_Task_Fail"].Value;
                 reason = "Task bị Fail (Reject lần 4)";
                 appliedRuleId = rules["Penalty_Task_Fail"].RuleID;
             }
 
-            // --- LOGIC KIỂM TRA NGƯỠNG 0 - 100 ---
             int oldScore = user.Score;
-            // Ép điểm User vào khoảng 0-100 bằng hàm helper
             user.Score = CalculateClampedScore(oldScore, scoreDelta);
 
-            // --- LƯU LOG VỚI SỐ ĐIỂM THỰC TẾ ---
+            // GIẢI PHÓNG SLOT CHO CẢ ANNOTATOR VÀ REVIEWER
+            if (task.Status == Models.Task.TaskStatus.Approved || task.Status == Models.Task.TaskStatus.Fail)
+            {
+                // Trừ cho Annotator (Người được truyền vào userId)
+                if (user.CurrentTaskCount > 0) user.CurrentTaskCount -= 1;
+
+                // Trừ cho Reviewer
+                if (task.ReviewerID.HasValue)
+                {
+                    var reviewer = await _context.Users.FindAsync(task.ReviewerID.Value);
+                    if (reviewer != null && reviewer.CurrentTaskCount > 0)
+                    {
+                        reviewer.CurrentTaskCount -= 1;
+                    }
+                }
+            }
+
             var log = new ReputationLog
             {
                 UserID = userId,
@@ -92,47 +98,35 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            // 2. CẬP NHẬT ANNOTATOR STATS
             var annoStat = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == userId);
             if (annoStat != null)
             {
                 annoStat.TotalCompletedTasks++;
-                annoStat.RejectDisputedTasksStreak = 0; // Reset khi hoàn thành task
-
+                annoStat.RejectDisputedTasksStreak = 0;
                 if (task.Status == Models.Task.TaskStatus.Approved && task.CurrentRound == 1)
                 {
                     annoStat.FirstTryApprovedTasks++;
                     annoStat.CurrentPerfectStreak++;
                 }
-
-                // Tính thời gian làm việc (Giờ)
                 double workHours = (DateTime.UtcNow - task.CreatedAt).TotalHours;
                 annoStat.TotalWorkingHours += workHours;
                 annoStat.AvgCompletionHours = annoStat.TotalWorkingHours / annoStat.TotalCompletedTasks;
             }
 
-            // 3. CẬP NHẬT REVIEWER STATS (Khi Approve)
-
             var revStat = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == task.ReviewerID.Value);
             if (revStat != null && task.Status == Models.Task.TaskStatus.Approved)
             {
                 revStat.TotalReviewedTasks++;
-                double reviewDuration = (DateTime.UtcNow - task.CreatedAt).TotalHours; // Giả định tính từ lúc tạo/giao
+                double reviewDuration = (DateTime.UtcNow - task.CreatedAt).TotalHours;
                 revStat.TotalReviewHours += reviewDuration;
                 revStat.AvgReviewHours = revStat.TotalReviewHours / revStat.TotalReviewedTasks;
             }
 
             await _repo.AddLogAsync(log);
-
-            // --- CHECK SA THẢI ---
             await CheckUserStatus(user, rules);
-
             await _repo.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// XỬ LÝ KHI REVIEWER THUA DISPUTE (Manager Accept khiếu nại)
-        /// </summary>
         public async System.Threading.Tasks.Task HandleReviewerDisputeLossAsync(Guid reviewerId, Guid taskId)
         {
             var reviewer = await _repo.GetUserForUpdateAsync(reviewerId);
@@ -140,12 +134,10 @@ namespace SWP_BE.Services
 
             var rules = (await _repo.GetAllActiveRulesAsync()).ToDictionary(r => r.RuleName, r => r);
 
-            // 1. TRỪ ĐIỂM REVIEWER (Rule 14: Penalty_Reviewer_False_Check = -10)
             int oldScore = reviewer.Score;
-            int penalty = rules["Penalty_Reviewer_False_Check"].Value; // -10
+            int penalty = rules["Penalty_Reviewer_False_Check"].Value;
             reviewer.Score = CalculateClampedScore(oldScore, penalty);
 
-            // 2. LƯU LOG TRỪ ĐIỂM
             await _repo.AddLogAsync(new ReputationLog
             {
                 UserID = reviewerId,
@@ -158,31 +150,19 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             });
 
-            // 3. CẬP NHẬT REVIEWER STATS
             var revStat = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == reviewerId);
             if (revStat != null)
             {
-                revStat.DisputedTasksStreak++; // Tăng chuỗi bị khiếu nại sai liên tiếp
-                revStat.CurrentPerfectRejectStreak = 0; // Reset chuỗi phong độ (Reject đúng) về 0
-
-                // 4. KIỂM TRA KHÓA TÀI KHOẢN (Rule 13: Max_Disputed_Tasks_Streak = 3)
+                revStat.DisputedTasksStreak++;
+                revStat.CurrentPerfectRejectStreak = 0;
                 int maxStreak = rules["Max_Disputed_Tasks_Streak"].Value;
-                if (revStat.DisputedTasksStreak >= maxStreak)
-                {
-                    reviewer.IsActive = false; // Khóa vì sai quá nhiều lần liên tiếp
-                }
+                if (revStat.DisputedTasksStreak >= maxStreak) reviewer.IsActive = false;
             }
 
-            // Nếu điểm về 0 cũng khóa luôn
             if (reviewer.Score <= 0) reviewer.IsActive = false;
-
             await _context.SaveChangesAsync();
         }
 
-
-        /// <summary>
-        /// XỬ LÝ KHI ANNOTATOR THUA DISPUTE (Manager Reject khiếu nại)
-        /// </summary>
         public async System.Threading.Tasks.Task HandleAnnotatorDisputeLossAsync(Guid annotatorId, Guid taskId)
         {
             var user = await _repo.GetUserForUpdateAsync(annotatorId);
@@ -190,12 +170,10 @@ namespace SWP_BE.Services
 
             var rules = (await _repo.GetAllActiveRulesAsync()).ToDictionary(r => r.RuleName, r => r);
 
-            // 1. TRỪ ĐIỂM ANNOTATOR (Rule 12: Penalty_Annotator_Rejected_Dispute = -5)
             int oldScore = user.Score;
-            int penalty = rules["Penalty_Annotator_Rejected_Dispute"].Value; // -5
+            int penalty = rules["Penalty_Annotator_Rejected_Dispute"].Value;
             user.Score = CalculateClampedScore(oldScore, penalty);
 
-            // 2. LƯU LOG TRỪ ĐIỂM
             await _repo.AddLogAsync(new ReputationLog
             {
                 UserID = annotatorId,
@@ -208,33 +186,18 @@ namespace SWP_BE.Services
                 CreatedAt = DateTime.UtcNow
             });
 
-            // 3. CẬP NHẬT ANNOTATOR STATS
             var annoStat = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == annotatorId);
             if (annoStat != null)
             {
-                // Tăng chuỗi khiếu nại sai liên tiếp
                 annoStat.RejectDisputedTasksStreak++;
-
-                // 4. KIỂM TRA KHÓA TÀI KHOẢN 
-                // Rule 16: Max_Wrong_Disputed_Tasks_Streak = 3
                 int maxWrongStreak = rules["Max_Wrong_Disputed_Tasks_Streak"].Value;
-
-                if (annoStat.RejectDisputedTasksStreak >= maxWrongStreak)
-                {
-                    user.IsActive = false; // "Bay màu" vì khiếu nại sai quá nhiều lần
-                }
+                if (annoStat.RejectDisputedTasksStreak >= maxWrongStreak) user.IsActive = false;
             }
 
-            // Nếu điểm uy tín về 0 cũng cho nghỉ việc luôn
             if (user.Score <= 0) user.IsActive = false;
-
             await _context.SaveChangesAsync();
         }
 
-
-        /// <summary>
-        /// Logic Manager check trước khi Assign Task
-        /// </summary>
         public async Task<(bool CanAssign, string Message)> CanManagerAssignTask(Guid annotatorId)
         {
             var user = await _repo.GetUserForUpdateAsync(annotatorId);
@@ -253,7 +216,6 @@ namespace SWP_BE.Services
             return (true, "Hợp lệ.");
         }
 
-        // --- HÀM HELPER ÉP ĐIỂM THEO Ý ANH ---
         private int CalculateClampedScore(int currentScore, int delta)
         {
             int result = currentScore + delta;
@@ -264,41 +226,28 @@ namespace SWP_BE.Services
 
         private async System.Threading.Tasks.Task CheckUserStatus(User user, Dictionary<string, ReputationRule> rules)
         {
-            // Nếu người dùng đang bị khóa nhưng điểm đã được cộng lại > 0 và ghi log thì mở khóa
             if (user.IsActive == false) user.IsActive = true;
-            // 1. Điểm về 0 -> Nghỉ việc
             if (user.Score <= 0) user.IsActive = false;
 
-            // 2. Check 3 Task Fail liên tiếp
             int streakLimit = rules["Max_Consecutive_Fails"].Value;
             var latestLogs = await _repo.GetLatestFailLogsAsync(user.UserID, streakLimit);
 
-            // Nếu 3 log gần nhất đều là Penalty_Task_Fail
             if (latestLogs.Count == streakLimit && latestLogs.All(l => l.RuleID == rules["Penalty_Task_Fail"].RuleID))
             {
                 user.IsActive = false;
             }
-
-
         }
 
-        /// <summary>
-        /// XỬ LÝ KHI REJECT (CẬP NHẬT CHUỖI PHONG ĐỘ)
-        /// </summary>
         public async System.Threading.Tasks.Task HandleTaskRejectionAsync(Guid annotatorId, Guid reviewerId)
         {
-            // Annotator: Đứt chuỗi Perfect
             var annoStat = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == annotatorId);
             if (annoStat != null) annoStat.CurrentPerfectStreak = 0;
 
-            // Reviewer: Tăng chuỗi Reject đúng
             var revStat = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == reviewerId);
             if (revStat != null) revStat.CurrentPerfectRejectStreak++;
 
             await _context.SaveChangesAsync();
         }
-
-        // Trong ReputationService.cs
 
         public async Task<IEnumerable<ReputationRuleDto>> GetAllRulesForAdminAsync()
         {
@@ -318,26 +267,20 @@ namespace SWP_BE.Services
         public async Task<(bool Success, string Message)> UpdateRuleAsync(int ruleId, UpdateRuleDto dto)
         {
             var rule = await _repo.GetRuleByIdAsync(ruleId);
-            if (rule == null)
-                return (false, "Không tìm thấy cấu hình luật này.");
+            if (rule == null) return (false, "Không tìm thấy cấu hình luật này.");
 
-            // Cập nhật các thông số
             rule.Value = dto.Value;
             rule.Description = dto.Description;
             rule.IsActive = dto.IsActive;
             rule.UpdatedAt = DateTime.UtcNow;
 
             await _repo.SaveChangesAsync();
-
             return (true, $"Đã cập nhật thành công luật: {rule.RuleName}");
         }
-        // Trong ReputationService.cs
 
         public async Task<AnnotatorStatsDto?> GetAnnotatorStatsAsync(Guid userId)
         {
-            var stats = await _context.AnnotatorStats
-                .FirstOrDefaultAsync(s => s.UserID == userId);
-
+            var stats = await _context.AnnotatorStats.FirstOrDefaultAsync(s => s.UserID == userId);
             if (stats == null) return null;
 
             return new AnnotatorStatsDto
@@ -353,9 +296,7 @@ namespace SWP_BE.Services
 
         public async Task<ReviewerStatsDto?> GetReviewerStatsAsync(Guid userId)
         {
-            var stats = await _context.ReviewerStats
-                .FirstOrDefaultAsync(s => s.UserID == userId);
-
+            var stats = await _context.ReviewerStats.FirstOrDefaultAsync(s => s.UserID == userId);
             if (stats == null) return null;
 
             return new ReviewerStatsDto
@@ -366,8 +307,6 @@ namespace SWP_BE.Services
                 DisputedTasksStreak = stats.DisputedTasksStreak,
                 CurrentPerfectRejectStreak = stats.CurrentPerfectRejectStreak
             };
-
-
         }
 
         public async Task<IEnumerable<AnnotatorSummaryDto>> GetAllAnnotatorsPerformanceAsync()

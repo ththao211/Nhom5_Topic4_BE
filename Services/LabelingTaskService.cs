@@ -21,11 +21,13 @@ namespace SWP_BE.Services
     {
         private readonly ILabelingTaskRepository _taskRepo;
         private readonly AppDbContext _context;
+        private readonly ReputationService _reputationService;
 
-        public LabelingTaskService(ILabelingTaskRepository taskRepo, AppDbContext context)
+        public LabelingTaskService(ILabelingTaskRepository taskRepo, AppDbContext context, ReputationService reputationService)
         {
             _taskRepo = taskRepo;
             _context = context;
+            _reputationService = reputationService;
         }
 
         public async Task<IEnumerable<UnassignedDataItemDto>> GetUnassignedDataAsync(Guid projectId)
@@ -81,11 +83,58 @@ namespace SWP_BE.Services
             var task = await _taskRepo.GetTaskByIdAsync(taskId);
             if (task == null) return (false, "Task không tồn tại.", null);
 
-            if (dto.AnnotatorID.HasValue) task.AnnotatorID = dto.AnnotatorID.Value;
-            if (dto.ReviewerID.HasValue) task.ReviewerID = dto.ReviewerID.Value;
+            // XỬ LÝ CHO ANNOTATOR
+            if (dto.AnnotatorID.HasValue && task.AnnotatorID != dto.AnnotatorID.Value)
+            {
+                var newAnnotatorId = dto.AnnotatorID.Value;
+
+                // Kiểm tra giới hạn 3 task dựa trên điểm uy tín
+                var checkResult = await _reputationService.CanManagerAssignTask(newAnnotatorId);
+                if (!checkResult.CanAssign)
+                {
+                    return (false, checkResult.Message, null);
+                }
+
+                // Cập nhật số lượng cho người mới
+                var newAnnotator = await _context.Users.FindAsync(newAnnotatorId);
+                if (newAnnotator != null) newAnnotator.CurrentTaskCount += 1;
+
+                // Trừ số lượng cho người cũ (nếu có)
+                if (task.AnnotatorID.HasValue)
+                {
+                    var oldAnnotator = await _context.Users.FindAsync(task.AnnotatorID.Value);
+                    if (oldAnnotator != null && oldAnnotator.CurrentTaskCount > 0)
+                        oldAnnotator.CurrentTaskCount -= 1;
+                }
+
+                task.AnnotatorID = newAnnotatorId;
+            }
+
+            // XỬ LÝ CHO REVIEWER
+            if (dto.ReviewerID.HasValue && task.ReviewerID != dto.ReviewerID.Value)
+            {
+                var newReviewerId = dto.ReviewerID.Value;
+
+                // Tăng số lượng cho Reviewer mới
+                var newReviewer = await _context.Users.FindAsync(newReviewerId);
+                if (newReviewer != null) newReviewer.CurrentTaskCount += 1;
+
+                // Trừ số lượng cho Reviewer cũ (nếu có)
+                if (task.ReviewerID.HasValue)
+                {
+                    var oldReviewer = await _context.Users.FindAsync(task.ReviewerID.Value);
+                    if (oldReviewer != null && oldReviewer.CurrentTaskCount > 0)
+                        oldReviewer.CurrentTaskCount -= 1;
+                }
+
+                task.ReviewerID = newReviewerId;
+            }
 
             await _taskRepo.UpdateTaskAsync(task);
             await _taskRepo.SaveChangesAsync();
+
+            // Ép lưu thay đổi của bảng Users (CurrentTaskCount)
+            await _context.SaveChangesAsync();
 
             var fullTaskInfo = await _context.Tasks
                 .Include(t => t.Project)
@@ -124,7 +173,6 @@ namespace SWP_BE.Services
             return (true, "Cập nhật thời hạn thành công.");
         }
 
-        // HÀM LẤY USER THEO ROLE
         public async Task<IEnumerable<UserBasicDto>> GetUsersByRoleAsync(string roleName)
         {
             if (!Enum.TryParse<Models.User.UserRole>(roleName, out var roleEnum))
