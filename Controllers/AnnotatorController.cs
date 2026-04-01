@@ -298,7 +298,6 @@ namespace SWP_BE.Controllers
             var history = new ReviewHistory
             {
                 TaskID = taskId,
-                ReviewerID = userId,
                 ReviewAt = DateTime.UtcNow,
                 FinalResult = "MissingLabelEvidence"
             };

@@ -29,7 +29,8 @@ namespace SWP_BE.Repositories
             var rawData = await _context.Disputes
                 .Include(d => d.Task)
                     .ThenInclude(t => t.Project)
-                .Where(d => d.Task.ReviewerID == reviewerId)
+                .Where(d => d.Task.ReviewerID == reviewerId &&
+                 d.Status == "Pending")
                 .OrderByDescending(d => d.CreatedAt)
                 .Select(d => new
                 {

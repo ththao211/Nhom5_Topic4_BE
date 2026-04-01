@@ -223,15 +223,6 @@ namespace SWP_BE.Services
 
                     var labelName =
                         Path.GetFileNameWithoutExtension(fileName) + ".txt";
-                    var exportLog = new ExportHistory
-                    {
-                        ExportID = Guid.NewGuid(),
-                        Format = "YOLO",
-                        CreatedAt = DateTime.UtcNow,
-                        ProjectID = projectId,
-                    };
-
-                    _context.ExportHistories.Add(exportLog);
 
                     await File.WriteAllLinesAsync(
                         Path.Combine(labelFolder, labelName),
@@ -246,9 +237,24 @@ namespace SWP_BE.Services
             ZipFile.CreateFromDirectory(tempFolder, zipPath);
 
             var bytes = await File.ReadAllBytesAsync(zipPath);
+            var projectExists = await _context.Projects
+            .AnyAsync(p => p.ProjectID == projectId);
 
+            if (!projectExists)
+                throw new Exception("Project không tồn tại.");
+
+            _context.ExportHistories.Add(new ExportHistory
+            {
+                ExportID = Guid.NewGuid(),
+                Format = "YOLO",
+                CreatedAt = DateTime.UtcNow,
+                ProjectID = projectId
+            });
+
+            await _context.SaveChangesAsync();
             return (bytes, "yolo_dataset.zip");
         }
+
 
         // ================= COCO EXPORT =================
         public async Task<(byte[] fileBytes, string fileName)> ExportCocoFileAsync(Guid projectId)
@@ -264,44 +270,25 @@ namespace SWP_BE.Services
                 .ToListAsync();
 
             if (!tasks.Any())
-                throw new Exception("Dự án chưa có Task nào được duyệt (Approved) để xuất dữ liệu.");
+                throw new Exception("Không có task Approved.");
 
             var project = tasks.First().Project;
-
-            var taskItemIds = tasks
-                .SelectMany(t => t.TaskItems)
-                .Select(i => i.ItemID)
-                .ToList();
-
-            var details = await _context.TaskItemDetails
-                .Where(d => taskItemIds.Contains(d.TaskItemID))
-                .Select(d => new
-                {
-                    d.TaskItemID,
-                    d.AnnotationData
-                })
-                .ToListAsync();
-
-            var detailLookup = details
-                .GroupBy(d => d.TaskItemID)
-                .ToDictionary(g => g.Key, g => g.ToList());
 
             var groupedLabels = project.ProjectLabels
                 .GroupBy(pl => pl.LabelID)
                 .Select(g => g.First())
                 .ToList();
 
+            var labelMap = groupedLabels
+                .Select((pl, index) => new { pl.LabelID, index })
+                .ToDictionary(x => x.LabelID, x => x.index);
+
             var categories = groupedLabels
                 .Select((pl, index) => new
                 {
                     id = index,
                     name = pl.CustomName ?? pl.Label.LabelName
-                })
-                .ToList();
-
-            var labelMap = groupedLabels
-                .Select((pl, index) => new { pl.LabelID, index })
-                .ToDictionary(x => x.LabelID, x => x.index);
+                });
 
             int imageId = 1;
             int annotationId = 1;
@@ -313,9 +300,7 @@ namespace SWP_BE.Services
             {
                 foreach (var item in task.TaskItems)
                 {
-                    if (item.DataItem == null) continue;
-
-                    if (!detailLookup.ContainsKey(item.ItemID))
+                    if (item.DataItem == null)
                         continue;
 
                     images.Add(new
@@ -326,40 +311,50 @@ namespace SWP_BE.Services
                         height = item.DataItem.Height ?? 1
                     });
 
-                    foreach (var detail in detailLookup[item.ItemID])
+                    foreach (var detail in item.TaskItemDetails)
                     {
-                        Console.WriteLine(detail.AnnotationData);
                         try
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(detail.AnnotationData);
+                            var data = JsonSerializer.Deserialize<
+                                Dictionary<string, JsonElement>
+                            >(detail.AnnotationData);
 
-                            if (data == null) continue;
+                            if (data == null)
+                                continue;
 
-                            int labelId = data["labelId"].GetInt32();
+                            if (!data.ContainsKey("labelId"))
+                                continue;
+
+                            var labelId =
+                                data["labelId"].GetInt32();
 
                             if (!labelMap.ContainsKey(labelId))
                                 continue;
 
-                            double x = data["x"].GetDouble();
-                            double y = data["y"].GetDouble();
-                            double w = data["w"].GetDouble();
-                            double h = data["h"].GetDouble();
+                            var x = data["x"].GetDouble();
+                            var y = data["y"].GetDouble();
+                            var w = data["w"].GetDouble();
+                            var h = data["h"].GetDouble();
 
                             var width = item.DataItem.Width ?? 1;
                             var height = item.DataItem.Height ?? 1;
 
                             var cocoX = (x - w / 2) * width;
                             var cocoY = (y - h / 2) * height;
-                            var cocoW = w * width;
-                            var cocoH = h * height;
 
                             annotations.Add(new
                             {
                                 id = annotationId++,
                                 image_id = imageId,
                                 category_id = labelMap[labelId],
-                                bbox = new[] { cocoX, cocoY, cocoW, cocoH },
-                                area = cocoW * cocoH,
+                                bbox = new[]
+                                {
+                                    cocoX,
+                                    cocoY,
+                                    w * width,
+                                    h * height
+                                },
+                                area = w * h * width * height,
                                 iscrowd = 0
                             });
                         }
@@ -368,19 +363,39 @@ namespace SWP_BE.Services
                             continue;
                         }
                     }
+
                     imageId++;
                 }
             }
 
-            var coco = new { images, annotations, categories };
+            var coco = new
+            {
+                images,
+                annotations,
+                categories
+            };
 
-            var json = JsonSerializer.Serialize(coco,
+            var json =
+                JsonSerializer.Serialize(coco,
                 new JsonSerializerOptions
                 {
                     WriteIndented = true
                 });
 
-            return (Encoding.UTF8.GetBytes(json), "coco_export.json");
+            _context.ExportHistories.Add(new ExportHistory
+            {
+                ExportID = Guid.NewGuid(),
+                Format = "COCO",
+                CreatedAt = DateTime.UtcNow,
+                ProjectID = projectId
+            });
+
+            await _context.SaveChangesAsync();
+
+            return (
+                Encoding.UTF8.GetBytes(json),
+                "coco_export.json"
+            );
         }
     }
 }
